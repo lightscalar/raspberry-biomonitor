@@ -1,24 +1,18 @@
 <template>
+
   <v-parallax src='static/img/heart-logo@2x.png' class='splash'>
     <v-layout align-center justify-center>
       <h1 class='logo text--white'>NEW VITAL SIGNS</h1>
     </v-layout>
     <v-layout align-center justify-center>
-      <input autofocus maxlength="6" class='code-input' v-model='sessionId'
-         @focus='focusInput'
-         @keyup='keyPress'
-         pattern='[a-zA-Z]{6}' type='text'
-         placeholder='Session ID' name='patientCode'>
-      </input>
-      <v-btn dark primary large class='large-btn' @click.native='loadSession'>
-        <v-icon class='add-patient' large>add</v-icon>
+      <v-btn
+        large class='large-btn white--text'
+        @click.native='createSession'>
+        Create New Session
       </v-btn>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      <v-btn large class='large-btn white--text'>Create New Session</v-btn>
     </v-layout>
   </v-parallax>
+
 </template>
 
 <script>
@@ -32,13 +26,25 @@
 
     data () {
       return {
-        sessionId: ''
-
+        sessionId: '',
       }
     },
 
     methods: {
-      keypress () {
+
+      keyPress () {
+
+      },
+
+      focusInput() {
+        this.sessionId = null
+      },
+
+      openSession () {
+
+      },
+
+      createSession () {
 
       }
 
@@ -76,18 +82,18 @@
   padding: 5px;
 }
 .splash {
-    min-height: 1000px;
+  min-height: 1000px;
 }
 .add-patient {
-    color: #305580;
+  color: #305580;
 }
 .container {
 }
 .large-btn {
-    font-size: 50 !important;
-    padding: 5px !important;
-    min-height: 90px !important;
-    background-color: #305580 !important;
-    border: 6px solid #afafaf !important;
+  font-size: 50 !important;
+  padding: 5px !important;
+  min-height: 90px !important;
+  background-color: #c62828 !important;
+  border: 6px solid #ffffff !important;
 }
 </style>
