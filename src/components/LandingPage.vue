@@ -13,6 +13,10 @@
       <v-btn dark primary large class='large-btn' @click.native='loadSession'>
         <v-icon class='add-patient' large>add</v-icon>
       </v-btn>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <v-btn large class='large-btn white--text'>Create New Session</v-btn>
     </v-layout>
   </v-parallax>
 </template>
