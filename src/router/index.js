@@ -6,10 +6,12 @@ import Session from '@/components/Session'
 Vue.use(Router)
 
 var landingPageRoute = {path: '/', name: 'LandingPage', component: LandingPage}
-var sessionRoute = {path: '/', name: 'LandingPage', component: Session}
+var sessionRoute = {path: '/session/:id', name: 'Session', component: Session,
+  props: true}
 
 export default new Router({
   routes: [
-    landingPageRoute
+    landingPageRoute,
+    sessionRoute
   ]
 })

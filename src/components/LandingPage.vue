@@ -45,6 +45,7 @@
       },
 
       createSession () {
+        this.$store.dispatch('createSession')
 
       }
 

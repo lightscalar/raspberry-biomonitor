@@ -14,6 +14,23 @@
       <img src='static/img/favicon@2x.png' class='nvs-logo'>
       </a>
       <v-toolbar-title v-text="title" class='title-logo'></v-toolbar-title>
+      <v-spacer></v-spacer>
+      <v-chip v-if='monitorStatus.behaving && monitorStatus.connected'
+        label
+        class='success white--text'>
+        <v-icon left class='white--text' style='opacity:1'>
+          swap_vert
+        </v-icon>
+        {{monitorStatus.message}}
+      </v-chip>
+      <v-chip v-else
+        label
+        class='error white--text'>
+        <v-icon left class='white-text' style='opacity:1'>
+          warning
+        </v-icon>
+        {{monitorStatus.message}}
+      </v-chip>
     </v-toolbar>
     <v-navigation-drawer
       temporary
@@ -83,7 +100,7 @@ export default {
         { icon: 'add_circle', text: 'Add Session', route: 'LandingPage' },
         { icon: 'archive', text: 'Sessions Archive', route: 'LandingPage'  },
         { divider: true },
-        { heading: 'Settings', route: 'LandingPage'  },
+        { heading: 'Configuration', route: 'LandingPage'  },
         { icon: 'settings', text: 'Settings', route: 'LandingPage'  },
         { icon: 'help', text: 'Help', route: 'LandingPage'  },
       ],
@@ -92,13 +109,34 @@ export default {
       rightDrawer: false,
       title: 'new vital signs'
     }
+  },
+
+  computed: {
+
+    monitorStatus () {
+      return this.$store.state.monitorStatus
+    }
+
+  },
+
+  methods: {
+    setStatus (data) {
+      this.$store.commit('setStatus', data)
+    }
+  },
+
+  mounted () {
+    console.log('App Mounted')
+    this.$store.dispatch('establishSocketConnection')
+    this.$store.state.socket.on('status', this.setStatus)
   }
+
 }
 </script>
 
 <style scoped>
 html, body, main {
-  background-color: #305580 !important;
+  background-color: #305580;
 }
 .title-logo {
   letter-spacing: 1em;
@@ -113,5 +151,8 @@ html, body, main {
   height: 20px;
   margin-left:15px;
   margin-right: 10px;
+}
+.subheader {
+  color: #c62828 !important;
 }
 </style>
