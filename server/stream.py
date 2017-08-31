@@ -44,7 +44,7 @@ class Stream(object):
         self.q = Queue()
 
         # Define the workers.
-        nb_workers = 5
+        nb_workers = 2
         target = self.process_data
         for _ in range(nb_workers):
             worker = threading.Thread(target=target, args=(self.q,),\
@@ -58,6 +58,7 @@ class Stream(object):
         while True:
             # Grab the data and reformat for processing/saving.
             channel_number, raw_data = q.get()
+            data = {}
             data['channel_number'] = channel_number
             data['board_time'] = np.array([d[0] for d in raw_data])
             data['sys_time'] = np.array([d[1] for d in raw_data])
@@ -89,10 +90,11 @@ class Stream(object):
     def save_to_database(self, data):
         '''Save data to the current database.'''
         if self.session_id is not None:
-            for idx, field_name in enumerate(self.field_names):
-                symbol = '{:02d}-{:s}'.format(self.channel_number, field_name)
+            channel_number = data['channel_number']
+            for field_name in self.field_names:
+                key = '{:02d}-{:s}'.format(channel_number, field_name)
                 value = data[field_name]
-                self.library.append(symbol, value)
+                self.library.append(key, value)
             print('Data Saved')
 
     def broadcast_data(self, data):
@@ -109,7 +111,8 @@ class Stream(object):
 
     def push(self, channel_number, data):
         '''Enqueue the current data package.'''
-        self.q.put((channel_number, data))
+        if len(data) > 0:
+            self.q.put((channel_number, data))
 
 
 if __name__ == '__main__':
@@ -125,19 +128,18 @@ if __name__ == '__main__':
 
     # Simulate some data filtering.
     s = Stream()
-    # s.set_session('test-session-06')
+    s.set_session_id('test-session-09')
     # s.start()
 
-    data = [(d[0], d[0], d[1]) for d in zip(t, y)]
+    # data = [(d[0], d[0], d[1]) for d in zip(t, y)]
     # s.push(1,data)
 
-    # for itr in range(0, len(t),1000):
-    #     print(itr)
-    #     t_ = t[1000*itr:1000*itr+1000]
-    #     y_ = y[1000*itr:1000*itr+1000]
-    #     data = [(d[0], d[0], d[1]) for d in zip(t_, y_)]
-    #     s.push(1, data)
-    #     sleep(0.2)
+    for itr in range(0, len(t),1000):
+        t_ = t[itr:itr+1000]
+        y_ = y[itr:itr+1000]
+        data = [(d[0], d[0], d[1]) for d in zip(t_, y_)]
+        s.push(0, data)
+        sleep(0.01)
 
     # s.kill()
     # y_filt = s.library.read('01-filtered_values').data
