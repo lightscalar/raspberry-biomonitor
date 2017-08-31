@@ -1,15 +1,13 @@
-from collections import deque
+from arctic import Arctic
 from events import Events
-from ipdb import set_trace as debug
 from queue import Queue
 import threading
 from time import sleep, time
-
-from arctic import Arctic
 from filters import *
 
 
-class Stream(object):
+
+class Pipe(object):
     '''Provides a thread for writing data chunks to a database or socket API.
        Pass into the BioBoard as a streamable object. Can be configured
        to handle realtime filtering of data chunks, and so on.
@@ -28,6 +26,7 @@ class Stream(object):
         self.freq_cutoff = 10
         self.filter_order = 5
         self.filter_coefs = {0:[], 1:[], 2:[], 3:[], 4:[]}
+        self.target_sampling_rate = 100
 
         # Socket communications.
         self.socket = socket
@@ -37,7 +36,7 @@ class Stream(object):
         self.session_id = None
         self.library = None
         self.field_names = \
-                ['board_time', 'sys_time', 'values',\
+                ['bio_time', 'sys_time', 'values',\
                  'filtered_values', 'filter_coefs']
 
         # Define the queue to hold data processing jobs.
@@ -52,20 +51,22 @@ class Stream(object):
             worker.start()
 
     def process_data(self, q):
-        '''Processor for the data queue.'''
-            # If data is present, process it and broadcast to outlets.
-
+        '''Process data in the queue.'''
+        # If data is present, process it and broadcast to outlets.
         while True:
             # Grab the data and reformat for processing/saving.
             channel_number, raw_data = q.get()
             data = {}
             data['channel_number'] = channel_number
-            data['board_time'] = np.array([d[0] for d in raw_data])
+            data['bio_time'] = np.array([d[0] for d in raw_data])
             data['sys_time'] = np.array([d[1] for d in raw_data])
             data['values'] = np.array([d[2] for d in raw_data])
 
             # Run lowpass filter over the data.
             data = self.filter_data(data)
+
+            # Downsample data for socket connection.
+            data = self.downsample_data(data)
 
             # Push data through socket, if available.
             self.broadcast_data(data)
@@ -76,11 +77,21 @@ class Stream(object):
             # Processing is done
             q.task_done()
 
+    def downsample_data(self, data):
+        '''Downsample data to target sampling rate.'''
+        tsr = self.target_sampling_rate
+        t_, v_= downsample(data['bio_time'], data['filtered_values'], tsr)
+        data['full_sampling_rate'] = 1 / np.median(np.diff(data['bio_time']))
+        data['sampling_rate'] = self.target_sampling_rate
+        data['downsampled_bio_time'] = t_
+        data['downsampled_filtered_values'] = v_
+        return data
+
     def filter_data(self, data):
         '''Filter the data.'''
         channel_number = data['channel_number']
         coefs = self.filter_coefs[channel_number]
-        y_filt, coefs = lowpass(data['board_time'], data['values'],\
+        y_filt, coefs = lowpass(data['bio_time'], data['values'],\
                 self.filter_order, self.freq_cutoff, coefs)
         self.filter_coefs[channel_number] = coefs
         data['filtered_values'] = y_filt
@@ -100,7 +111,12 @@ class Stream(object):
     def broadcast_data(self, data):
         '''Broadcast current data on the socket.'''
         if self.socket is not None:
-            self.socket.emit('data_package', self.data)
+            package = {}
+            package['time'] = data['downsampled_bio_time']
+            package['vals'] = data['downsampled_filtered_values']
+            package['channel_number'] = data['downsampled_bio_time']
+            package['sampling_rate'] = data['full_sampling_rate']
+            self.socket.emit('data_package', package)
 
     def set_session_id(self, session_id):
         '''Set the current session ID.'''
@@ -111,40 +127,34 @@ class Stream(object):
 
     def push(self, channel_number, data):
         '''Enqueue the current data package.'''
+        print('PUSHING DATA.')
         if len(data) > 0:
             self.q.put((channel_number, data))
 
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
 
-    from pylab import *
-    ion()
-    close('all')
+#     from pylab import *
+#     ion()
+#     close('all')
 
-    # Make some data to play with.
-    v = Vessel('good_collection.dat')
-    t = v.t * 1e-6
-    y = v.y
+#     # Make some data to play with.
+#     v = Vessel('good_collection.dat')
+#     t = v.t * 1e-6
+#     y = v.y
 
-    # Simulate some data filtering.
-    s = Stream()
-    s.set_session_id('test-session-09')
-    # s.start()
+#     # Simulate some data filtering.
+#     s = Stream()
+#     s.set_session_id('test-session-09')
+#     # s.start()
 
-    # data = [(d[0], d[0], d[1]) for d in zip(t, y)]
-    # s.push(1,data)
+#     # data = [(d[0], d[0], d[1]) for d in zip(t, y)]
+#     # s.push(1,data)
 
-    for itr in range(0, len(t),1000):
-        t_ = t[itr:itr+1000]
-        y_ = y[itr:itr+1000]
-        data = [(d[0], d[0], d[1]) for d in zip(t_, y_)]
-        s.push(0, data)
-        sleep(0.01)
-
-    # s.kill()
-    # y_filt = s.library.read('01-filtered_values').data
-    # t_db = s.library.read('01-board_time').data
-    # close('all')
-
-    # plot(y_filt)
+#     for itr in range(0, len(t),1000):
+#         t_ = t[itr:itr+1000]
+#         y_ = y[itr:itr+1000]
+#         data = [(d[0], d[0], d[1]) for d in zip(t_, y_)]
+#         s.push(0, data)
+#         sleep(0.01)
 

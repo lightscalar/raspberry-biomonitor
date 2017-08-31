@@ -1,9 +1,5 @@
-import seaborn
-import pylab as plt
 import numpy as np
 from scipy.signal import butter, lfilter
-from mathtools.utils import Vessel
-from ipdb import set_trace as debug
 
 
 def lowpass(t, y, filter_order=3, freq_cutoff=10, zi=[]):
@@ -25,6 +21,41 @@ def lowpass(t, y, filter_order=3, freq_cutoff=10, zi=[]):
 
     # Return BOTH filtered signal and updated tap delays.
     return y_filt, zf
+
+
+def downsample(t, x, target_sampling_rate):
+    '''Smarter downsampling. We now pad out to appropriate length, and average
+       samples appropriately in order to approximately achieve the target
+       downsampling rate.
+    '''
+
+    if len(t) == 0:
+        # Nothing to downsample. So, um. Sort of awkward.
+        return t, x
+
+    # Convert to numpy arrays.
+    t, x = np.array(t), np.array(x)
+
+    # Estimate current sampling rate.
+    fs = 1/np.median(np.diff(t))
+
+    # Calculate the downsample factor, given the target sampling rate.
+    R = int(np.ceil(fs/target_sampling_rate))
+
+    # Determine the padding size & pad the data.
+    padsize = int(np.ceil(len(x)/R)*R - len(x))
+    t = np.append(t, np.zeros(padsize)*np.NaN)
+    x = np.append(x, np.zeros(padsize)*np.NaN)
+
+    # Reshape the data.
+    x = x.reshape(-1, R)
+    t = t.reshape(-1, R)
+
+    # Take the mean along axis 1 and convert back to list. Et voila!
+    x_ = list(np.nanmean(x, 1))
+    t_ = list(np.nanmean(t, 1))
+
+    return t_, x_
 
 
 if __name__ == '__main__':
@@ -57,11 +88,11 @@ if __name__ == '__main__':
     # y0_filt,zi = lowpass(t0, y0, filter_order=filter_order, freq_cutoff=6)
     # y1_filt,zi = lowpass(t1, y1, filter_order, freq_cutoff=8, zi=zi)
 
-    import pylab as plt
-    plt.ion()
-    plt.close('all')
-    plt.figure(100)
-    plt.plot(t[:N], y_filt)
+    # import pylab as plt
+    # plt.ion()
+    # plt.close('all')
+    # plt.figure(100)
+    # plt.plot(t[:N], y_filt)
     # plt.plot(t0, y0_filt)
     # plt.plot(t1, y1_filt)
 

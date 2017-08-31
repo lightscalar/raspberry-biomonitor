@@ -50,9 +50,9 @@ class BioBoard(threading.Thread):
         self._last_read_bad = False
 
         # Internal data buffer.
-        self.stream = None
+        self.pipe = None
         self.AVAILABLE_CHANNELS = [0, 1, 2, 3]
-        self.BUFFER_SIZE = 10
+        self.BUFFER_SIZE = 100
         self.buffer = {}
         self.buffer_counts = {}
         for channel in self.AVAILABLE_CHANNELS:
@@ -158,8 +158,8 @@ class BioBoard(threading.Thread):
             # If we've accumulated a chunk, let's push it out.
             if self.buffer_counts[channel] == self.BUFFER_SIZE:
                 self.buffer_counts[channel] = 0
-                if self.stream and self.do_stream:
-                    self.stream.push(channel, self.buffer[channel])
+                if self.pipe and self.do_stream:
+                    self.pipe.push(channel, self.buffer[channel])
 
         # If no valid channel is present, increment bad_data_count.
         if (channel is None):
@@ -182,13 +182,13 @@ class BioBoard(threading.Thread):
                 self._behaving = True
                 self._set_status('Data Available')
 
-    def stream_to(self, stream):
+    def pipe_to(self, pipe):
         '''Start saving data to specified filename via a time series object.'''
-        self.stream = stream
+        self.pipe = pipe
 
     def start_stream(self):
         '''Start streaming data to the database/socket.'''
-        if self.stream is not None:
+        if self.pipe is not None:
             self.do_stream = True
             self._set_status('Recording Data')
         else:
@@ -232,7 +232,7 @@ if __name__ == '__main__':
     board.start()
 
     if True:
-        from stream import *
-        s = Stream()
+        from pipe import *
+        pipe = Pipe()
 
 
