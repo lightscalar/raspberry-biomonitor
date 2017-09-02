@@ -21,7 +21,7 @@ export default new Vuex.Store ({
   mutations: {
 
     setSocket (state) {
-      state.socket = io.connect('http://localhost:8000')
+      state.socket = io.connect('http://localhost')
     },
 
     setStatus (state, monitorStatus) {

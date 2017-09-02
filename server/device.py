@@ -52,7 +52,7 @@ class BioBoard(threading.Thread):
         # Internal data buffer.
         self.pipe = None
         self.AVAILABLE_CHANNELS = [0, 1, 2, 3]
-        self.BUFFER_SIZE = 100
+        self.BUFFER_SIZE = 5
         self.buffer = {}
         self.buffer_counts = {}
         for channel in self.AVAILABLE_CHANNELS:
@@ -148,8 +148,8 @@ class BioBoard(threading.Thread):
         channel, board_timestamp, value = read_data(ser)
 
         # Buffer the data, if there is any.
-        if channel is not None:
-            sys_timestamp = time.time()
+        if channel is not None and self.do_stream:
+            sys_timestamp = board_timestamp
             converted_value = value * self.COV_FACTOR
             data = (board_timestamp*1e-6, sys_timestamp, converted_value)
             self.buffer[channel].append(data)
@@ -158,7 +158,7 @@ class BioBoard(threading.Thread):
             # If we've accumulated a chunk, let's push it out.
             if self.buffer_counts[channel] == self.BUFFER_SIZE:
                 self.buffer_counts[channel] = 0
-                if self.pipe and self.do_stream:
+                if self.pipe:
                     self.pipe.push(channel, self.buffer[channel])
 
         # If no valid channel is present, increment bad_data_count.
@@ -198,7 +198,7 @@ class BioBoard(threading.Thread):
         ''' Turn stream to database/socket off.'''
         if self.do_stream:
             self.do_stream = False
-            self._set_status('Streaming Stopped')
+            self._set_status('Data Available')
         else:
             self._set_status('Cannot Stop Stream | Not Currently Streaming')
 

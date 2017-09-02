@@ -23,6 +23,20 @@ def lowpass(t, y, filter_order=3, freq_cutoff=10, zi=[]):
     return y_filt, zf
 
 
+def dumb_downsample(t, x, target_sampling_rate):
+    '''Simple downsampling!'''
+    # Convert to numpy arrays.
+    t, x = np.array(t), np.array(x)
+
+    # Estimate current sampling rate.
+    fs = 1/np.median(np.diff(t))
+    dt = int(np.ceil(fs/target_sampling_rate))
+    idx = range(0, len(x), dt)
+    t_ = t[idx].tolist()
+    v_ = x[idx].tolist()
+    return t_, v_
+
+
 def downsample(t, x, target_sampling_rate):
     '''Smarter downsampling. We now pad out to appropriate length, and average
        samples appropriately in order to approximately achieve the target

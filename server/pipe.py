@@ -6,7 +6,6 @@ from time import sleep, time
 from filters import *
 
 
-
 class Pipe(object):
     '''Provides a thread for writing data chunks to a database or socket API.
        Pass into the BioBoard as a streamable object. Can be configured
@@ -26,7 +25,7 @@ class Pipe(object):
         self.freq_cutoff = 10
         self.filter_order = 5
         self.filter_coefs = {0:[], 1:[], 2:[], 3:[], 4:[]}
-        self.target_sampling_rate = 100
+        self.target_sampling_rate = 50
 
         # Socket communications.
         self.socket = socket
@@ -43,12 +42,13 @@ class Pipe(object):
         self.q = Queue()
 
         # Define the workers.
-        nb_workers = 2
+        nb_workers = 10
         target = self.process_data
         for _ in range(nb_workers):
             worker = threading.Thread(target=target, args=(self.q,),\
                     daemon=True)
             worker.start()
+        self.q.join()
 
     def process_data(self, q):
         '''Process data in the queue.'''
@@ -57,6 +57,7 @@ class Pipe(object):
             # Grab the data and reformat for processing/saving.
             channel_number, raw_data = q.get()
             data = {}
+            data['start'] = time()
             data['channel_number'] = channel_number
             data['bio_time'] = np.array([d[0] for d in raw_data])
             data['sys_time'] = np.array([d[1] for d in raw_data])
@@ -90,12 +91,12 @@ class Pipe(object):
     def filter_data(self, data):
         '''Filter the data.'''
         channel_number = data['channel_number']
-        coefs = self.filter_coefs[channel_number]
-        y_filt, coefs = lowpass(data['bio_time'], data['values'],\
-                self.filter_order, self.freq_cutoff, coefs)
-        self.filter_coefs[channel_number] = coefs
+        coefs_in = self.filter_coefs[channel_number]
+        y_filt, coefs_out = lowpass(data['bio_time'], data['values'],\
+                self.filter_order, self.freq_cutoff, coefs_in)
+        self.filter_coefs[channel_number] = coefs_out
         data['filtered_values'] = y_filt
-        data['filter_coefs'] = coefs
+        data['filter_coefs'] = coefs_out
         return data
 
     def save_to_database(self, data):
@@ -112,10 +113,13 @@ class Pipe(object):
         '''Broadcast current data on the socket.'''
         if self.socket is not None:
             package = {}
+            # package['time'] = data['bio_time'].tolist()
+            # package['vals'] = data['filtered_values'].tolist()
             package['time'] = data['downsampled_bio_time']
             package['vals'] = data['downsampled_filtered_values']
-            package['channel_number'] = data['downsampled_bio_time']
-            package['sampling_rate'] = data['full_sampling_rate']
+            package['channelNumber'] = data['channel_number']
+            package['samplingRate'] = data['full_sampling_rate']
+            package['localRate'] = self.target_sampling_rate
             self.socket.emit('data_package', package)
 
     def set_session_id(self, session_id):
@@ -127,9 +131,20 @@ class Pipe(object):
 
     def push(self, channel_number, data):
         '''Enqueue the current data package.'''
-        print('PUSHING DATA.')
         if len(data) > 0:
             self.q.put((channel_number, data))
+
+    def put(self, channel_number, raw_data):
+        '''Non-thread based version.'''
+        data = {}
+        data['start'] = time()
+        data['channel_number'] = channel_number
+        data['bio_time'] = np.array([d[0] for d in raw_data])
+        data['sys_time'] = np.array([d[1] for d in raw_data])
+        data['values'] = np.array([d[2] for d in raw_data])
+        data = self.filter_data(data)
+        data = self.downsample_data(data)
+        self.broadcast_data(data)
 
 
 # if __name__ == '__main__':
