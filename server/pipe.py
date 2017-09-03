@@ -7,7 +7,7 @@ from filters import *
 
 
 class Pipe(object):
-    '''Provides a thread for writing data chunks to a database or socket API.
+    '''Provides a thread for writing data chunks to an arctic database.
        Pass into the BioBoard as a streamable object. Can be configured
        to handle realtime filtering of data chunks, and so on.
     '''
@@ -17,26 +17,17 @@ class Pipe(object):
 
         # Set up the event bus.
         self.events = Events()
-        self.do_process_data = False
+        self.do_write_data = False
 
         # Set up the data filters.
         self.data = None
-        self.channel_number = None
-        self.freq_cutoff = 10
-        self.filter_order = 5
-        self.filter_coefs = {0:[], 1:[], 2:[], 3:[], 4:[]}
-        self.target_sampling_rate = 50
-
-        # Socket communications.
-        self.socket = socket
+        self.allowed_channels  = [0]
 
         # Set up the connection to Arctic.
         self.store = Arctic('localhost')
         self.session_id = None
         self.library = None
-        self.field_names = \
-                ['bio_time', 'sys_time', 'values',\
-                 'filtered_values', 'filter_coefs']
+        self.field_names = ['sys_time', 'bio_time', 'values', 'filtered_values']
 
         # Define the queue to hold data processing jobs.
         self.q = Queue()
@@ -48,79 +39,43 @@ class Pipe(object):
             worker = threading.Thread(target=target, args=(self.q,),\
                     daemon=True)
             worker.start()
-        self.q.join()
+
 
     def process_data(self, q):
         '''Process data in the queue.'''
         # If data is present, process it and broadcast to outlets.
         while True:
-            # Grab the data and reformat for processing/saving.
-            channel_number, raw_data = q.get()
-            data = {}
-            data['start'] = time()
-            data['channel_number'] = channel_number
-            data['bio_time'] = np.array([d[0] for d in raw_data])
-            data['sys_time'] = np.array([d[1] for d in raw_data])
-            data['values'] = np.array([d[2] for d in raw_data])
+            if self.recording and (self.session_id is not None):
+                data = json.loads(q.get())
+                self.write_data(self, data)
+                q.task_done()
+            else:
+                q.task_done()
 
-            # Run lowpass filter over the data.
-            data = self.filter_data(data)
+    def write_data(self, data):
+        '''Write data to the arctic data store.'''
+        channel = data[0]
+        data = data[1:]
+        for itr, field_name in enumerate(self.field_names):
+            key = '{:02d}-{:s}'.format(channel_number, field_name)
+            value = data[itr]
+            self.library.append(key, value)
 
-            # Downsample data for socket connection.
-            data = self.downsample_data(data)
 
-            # Push data through socket, if available.
-            self.broadcast_data(data)
 
-            # Save data to database.
-            self.save_to_database(data)
+    def start_recording(self, session_id):
+        '''Start streaming data to the Arctic datastore.'''
+        self.session_id = str(session_id)
+        if session_id not in self.store.list_libraries():
+            self.store.initialize_library(session_id)
+        self.library = self.store[session_id]
+        self.recording = True
 
-            # Processing is done
-            q.task_done()
+    def stop_recording(self):
+        '''Stop writing to the database.'''
+        self.recording = False
+        self.session_id = None
 
-    def downsample_data(self, data):
-        '''Downsample data to target sampling rate.'''
-        tsr = self.target_sampling_rate
-        t_, v_= downsample(data['bio_time'], data['filtered_values'], tsr)
-        data['full_sampling_rate'] = 1 / np.median(np.diff(data['bio_time']))
-        data['sampling_rate'] = self.target_sampling_rate
-        data['downsampled_bio_time'] = t_
-        data['downsampled_filtered_values'] = v_
-        return data
-
-    def filter_data(self, data):
-        '''Filter the data.'''
-        channel_number = data['channel_number']
-        coefs_in = self.filter_coefs[channel_number]
-        y_filt, coefs_out = lowpass(data['bio_time'], data['values'],\
-                self.filter_order, self.freq_cutoff, coefs_in)
-        self.filter_coefs[channel_number] = coefs_out
-        data['filtered_values'] = y_filt
-        data['filter_coefs'] = coefs_out
-        return data
-
-    def save_to_database(self, data):
-        '''Save data to the current database.'''
-        if self.session_id is not None:
-            channel_number = data['channel_number']
-            for field_name in self.field_names:
-                key = '{:02d}-{:s}'.format(channel_number, field_name)
-                value = data[field_name]
-                self.library.append(key, value)
-            print('Data Saved')
-
-    def broadcast_data(self, data):
-        '''Broadcast current data on the socket.'''
-        if self.socket is not None:
-            package = {}
-            # package['time'] = data['bio_time'].tolist()
-            # package['vals'] = data['filtered_values'].tolist()
-            package['time'] = data['downsampled_bio_time']
-            package['vals'] = data['downsampled_filtered_values']
-            package['channelNumber'] = data['channel_number']
-            package['samplingRate'] = data['full_sampling_rate']
-            package['localRate'] = self.target_sampling_rate
-            self.socket.emit('data_package', package)
 
     def set_session_id(self, session_id):
         '''Set the current session ID.'''
@@ -132,7 +87,7 @@ class Pipe(object):
     def push(self, channel_number, data):
         '''Enqueue the current data package.'''
         if len(data) > 0:
-            self.q.put((channel_number, data))
+            self.q.put((data)
 
     def put(self, channel_number, raw_data):
         '''Non-thread based version.'''

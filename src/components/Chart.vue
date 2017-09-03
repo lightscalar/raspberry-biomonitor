@@ -31,7 +31,7 @@
         <v-flex>
           <v-slider
             label="TIME"
-            max="10"
+            max="20"
             min='0'
             v-model="speedScale">
           </v-slider>
@@ -97,7 +97,7 @@
       updateBuffer (dataPackage) {
         // Update sampling rate.
         dataPackage = JSON.parse(dataPackage)
-        this.timeSeries.append(new Date().getTime(), dataPackage[2])
+        this.timeSeries.append(new Date().getTime(), dataPackage[3])
       },
 
       simpleUpdate () {

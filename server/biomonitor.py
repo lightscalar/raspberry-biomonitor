@@ -1,12 +1,13 @@
-import threading
-from queue import Queue
-import numpy as np
-from glob import glob
-import re
-import serial
-from time import time, sleep
 from flask_socketio import SocketIO, send, emit
 from flask import Flask
+from glob import glob
+import numpy as np
+from queue import Queue
+import re
+import serial
+import threading
+from time import time, sleep
+from scipy.signal import butter, lfilter
 from comm_link import *
 
 
@@ -35,11 +36,25 @@ def find_serial_devices():
 class Biomonitor(threading.Thread):
     '''Connect to biomonitor device and push data to a socket connection.'''
 
-    def __init__(self):
+    def __init__(self, sampling_rate=50, freq_cutoff=10):
         '''See if we can find a valid biomonitor device'''
         threading.Thread.__init__(self)
         self.port = None
         self.go = True
+
+        # Set up the filters.
+        filter_order = 5
+        self.sampling_rate = sampling_rate
+        self.dt = 1/sampling_rate
+        nyquist = 0.5 * sampling_rate
+        f_low = freq_cutoff/nyquist
+        self.a, self.b  = butter(filter_order, f_low, 'low', analog=False)
+
+        # Channel specific stats.
+        self.allowed_channels = [0]
+        self.stats = {}
+        for chn in self.allowed_channels:
+            self.stats[chn] = {'zi': np.zeros(filter_order), 'last_send': 0}
 
         # Connect to the hardware.
         self.connect_to_board()
@@ -57,9 +72,11 @@ class Biomonitor(threading.Thread):
             self.client = Client()
             connected = self.client.connected
             if not connected:
-                print('Cannot connect to port {}'.format(self.client.port))
+                print('Cannot connect to port {}.'.format(self.client.port))
                 print('Trying again.')
                 sleep(0.2)
+            else:
+                print('Connected to port {}.'.format(self.client.port))
 
     def connect_to_board(self):
         '''Attempt to connect to the Biomonitor hardware.'''
@@ -78,6 +95,8 @@ class Biomonitor(threading.Thread):
                 print('Cannot find board.')
                 print('Trying again.')
                 sleep(0.2)
+            else:
+                print('Connected to board.')
 
     def parse_biomonitor(self, line):
         '''Parse output from the Biomonitor.'''
@@ -101,21 +120,29 @@ class Biomonitor(threading.Thread):
                     pass
         return (channel_number, timestamp, value)
 
+    def filter(self, channel, value):
+        '''Filter the current value.'''
+        zi = self.stats[channel]['zi']
+        y, zf = lfilter(self.a, self.b, [value], zi=zi)
+        self.stats[channel]['zi'] = zf
+        return y[0]
+
+    def read_data(self, ser):
+        '''Read data, filter data, transmit data across socket.'''
+        line = ser.readline()
+        chn, timestamp, value = self.parse_biomonitor(line)
+        if chn in self.allowed_channels:
+            if (time() - self.stats[chn]['last_send']) >= self.dt:
+                self.stats[chn]['last_send'] = time()
+                filt_val = self.filter(chn, value)
+                obj = json.dumps([chn, time(), timestamp, value, filt_val])
+                self.client.send_json(obj)
+
     def run(self):
         '''Collect data and send it to a socket connection.'''
-        last_send = time()
-        stats = {}
-        for chn in [0,1,2]:
-            stats[chn] = {'n':0, 'mean':0, 'coefs': []}
         with serial.Serial(self.port, BAUD_RATE) as ser:
             while self.go:
-                line = ser.readline()
-                channel, timestamp, value = self.parse_biomonitor(line)
-                if channel == 0:
-                    if time() - last_send >= 0.02:
-                        obj = json.dumps([channel, timestamp, value])
-                        self.client.send_json(obj)
-                        last_send = time()
+                self.read_data(ser)
 
     def stop(self):
         self.client.close()

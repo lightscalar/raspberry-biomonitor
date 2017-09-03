@@ -1,5 +1,3 @@
-from device import BioBoard
-from biomonitor import *
 from flask import Flask, render_template, copy_current_request_context
 from flask_socketio import SocketIO, send, emit
 from pymongo import MongoClient
