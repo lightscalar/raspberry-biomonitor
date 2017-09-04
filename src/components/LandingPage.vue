@@ -1,7 +1,7 @@
 <template>
-
-  <v-parallax src='static/img/heart-logo@2x.png' class='splash'>
-    <v-layout align-center justify-center>
+<v-container>
+  <!-- <v-parallax src='static/img/heart-logo@2x.png' class='splash'> -->
+    <v-layout align-center justify-center class='form'>
       <h1 class='logo text--white'>NEW VITAL SIGNS</h1>
     </v-layout>
     <v-layout align-center justify-center>
@@ -11,7 +11,8 @@
         Create New Session
       </v-btn>
     </v-layout>
-  </v-parallax>
+  <!-- </v-parallax> -->
+</v-container>
 
 </template>
 
@@ -63,6 +64,10 @@
 </script>
 
 <style scoped>
+.container {
+    background-image: url('../../static/img/heart-logo@2x.png');
+    background-position: center 10px;
+}
 .logo {
   font-size: 40px;
   letter-spacing: 1em;
@@ -83,13 +88,12 @@
   padding: 5px;
 }
 .splash {
+  padding-top: 400px;
   min-height: 600px;
   overflow: hidden !important;
 }
 .add-patient {
   color: #305580;
-}
-.container {
 }
 .large-btn {
   font-size: 50 !important;
@@ -97,5 +101,8 @@
   min-height: 90px !important;
   background-color: #c62828 !important;
   border: 6px solid #ffffff !important;
+}
+.form {
+  margin-top: 200px;
 }
 </style>
