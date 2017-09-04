@@ -67,6 +67,7 @@
 .container {
     background-image: url('../../static/img/heart-logo@2x.png');
     background-position: center 10px;
+    overflow: hidden !important;
 }
 .logo {
   font-size: 40px;
