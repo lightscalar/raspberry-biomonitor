@@ -1,6 +1,6 @@
 <template>
   <v-layout>
-    <v-flex xs3>
+    <v-flex xs5>
 
       <v-layout>
         <v-flex>
@@ -38,7 +38,7 @@
       </v-layout>
 
       <v-layout>
-        <v-flex xs8>
+        <v-flex xs7>
           <!-- <v-btn -->
           <!--   primary -->
           <!--   @click.native='autoScale=true; autoScaleIterations=0'> -->
@@ -277,5 +277,7 @@
 </script>
 
 <style>
-
+    html, body, main {
+      overflow: hidden
+    }
 </style>
