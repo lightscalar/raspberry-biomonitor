@@ -1,6 +1,5 @@
 .DS_Store
 node_modules/
-dist/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -16,6 +15,7 @@ yarn-error.log*
 __pycache__/
 *.py[cod]
 *.dat
+*.cmd
 *$py.class
 
 # C extensions
