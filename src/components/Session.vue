@@ -7,18 +7,18 @@
         <v-btn
           v-if='!isRecording'
           @click.native='toggleRecord'
-          icon error large
-          v-tooltip:top="{html: 'Start Recording'}"
+          error large
           class='white--text red darken-3'>
-          <!-- <v-icon>fiber_manual_record</v-icon> -->
+          <v-icon class='white--text' left>fiber_manual_record</v-icon>
+          Record
         </v-btn>
         <v-btn
           v-else
           @click.native='toggleRecord'
-          v-tooltip:top="{html: 'Pause Recording'}"
-          icon primary large
+          primary large
           class='white--text'>
-          <v-icon>pause</v-icon>
+          <v-icon class='white--text' left>pause</v-icon>
+          Pause
         </v-btn>
       </v-card-title>
     </v-card>
@@ -26,9 +26,7 @@
 
     <v-card>
       <v-card-text>
-        <!-- <div id='data' style='display: block: height:400px'> -->
-          <chart v-bind:max-scale='maxScale' @update-rate='updateRate'></chart>
-        <!-- </div> -->
+        <chart></chart>
       </v-card-text>
     </v-card>
 
@@ -50,8 +48,6 @@ export default {
     return {
 
       isRecording: false,
-      samplingRate: 0,
-      maxScale: 0.75
 
     }
   },
@@ -66,7 +62,7 @@ export default {
       if (this.isRecording) {
         this.$store.state.socket.emit('stop_record')
       } else {
-        this.$store.state.socket.emit('start_record')
+        this.$store.state.socket.emit('start_record', this.session._id)
       }
       this.isRecording = !this.isRecording
     }

@@ -2,7 +2,7 @@ import numpy as np
 from scipy.signal import butter, lfilter
 
 
-def lowpass(t, y, filter_order=3, freq_cutoff=10, zi=[]):
+def lowpass(t, y, filter_order=5, freq_cutoff=10, zi=[]):
     '''Lowpass Butterworth filter the signal.'''
     # Determine the sampling rate of the supplied data.
     fs = 1/np.median(np.diff(t))

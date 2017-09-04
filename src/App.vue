@@ -15,7 +15,7 @@
       </a>
       <v-toolbar-title v-text="title" class='title-logo'></v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-chip v-if='monitorStatus.behaving && monitorStatus.connected'
+      <v-chip v-if='monitorStatus.connected'
         label
         class='success white--text'>
         <v-icon left class='white--text' style='opacity:1'>

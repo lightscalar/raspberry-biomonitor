@@ -1,7 +1,7 @@
 <template>
   <v-layout>
     <v-flex xs3>
-      {{Math.round(samplingRate)}} | {{Math.round(boardTime)}}
+      {{456.2 | formatNumber('%0.2f')}}
 
       <v-layout>
         <v-flex>
@@ -39,11 +39,31 @@
       </v-layout>
 
       <v-layout>
-        <v-flex>
+        <v-flex xs8>
+          <!-- <v-btn -->
+          <!--   primary -->
+          <!--   @click.native='autoScale=true; autoScaleIterations=0'> -->
+          <!--   AutoScale -->
+          <!-- </v-btn> -->
           <v-checkbox
             color='primary'
             v-model='autoScale'
             label='Autoscale'>
+          </v-checkbox>
+       </v-flex>
+       <v-flex xs4>
+         <v-btn icon class='mt-3' @click.native='openConfig = true'>
+           <v-icon>settings</v-icon>
+         </v-btn>
+       </v-flex>
+      </v-layout>
+
+      <v-layout>
+        <v-flex>
+          <v-checkbox
+            color='primary'
+            v-model='plotFiltered'
+            label='10 Hz Filter'>
           </v-checkbox>
        </v-flex>
       </v-layout>
@@ -52,6 +72,80 @@
   <v-flex xs12 id='data'>
     <canvas id='chart' height="300"></canvas>
   </v-flex>
+
+
+  <v-dialog
+    width='500px'
+    v-model='openConfig'
+    persistent>
+    <v-card>
+      <v-card-title>
+        <v-subheader>
+        AutoScale Options
+        </v-subheader>
+      </v-card-title>
+      <v-divider></v-divider>
+      <v-card-text>
+        <v-layout>
+          <v-flex xs4 class='input-group'>
+            <label>Sensitivity</label>
+          </v-flex>
+          <v-flex xs6>
+            <v-slider
+              max='300'
+              min='0'
+              step="1"
+              v-model='scaleSensitivity'>
+            </v-slider>
+          </v-flex>
+          <v-flex xs2 class='mt-3'>
+            {{alphaDecay | formatNumber('%0.3f')}}
+          </v-flex>
+        </v-layout>
+        <v-layout>
+          <v-flex xs4 class='input-group'>
+            <label>Deviations Above</label>
+          </v-flex>
+          <v-flex xs6>
+            <v-slider
+              max='1000'
+              min='10'
+              step="1"
+              v-model='stdAbove'>
+            </v-slider>
+          </v-flex>
+          <v-flex xs2 class='mt-3'>
+            {{ (stdAbove/100) | formatNumber('%0.2f')}}
+          </v-flex>
+        </v-layout>
+        <v-layout>
+          <v-flex xs4 class='input-group'>
+            <label>Deviations Above</label>
+          </v-flex>
+          <v-flex xs6>
+            <v-slider
+              max='1000'
+              min='10'
+              step="1"
+              v-model='stdBelow'>
+            </v-slider>
+          </v-flex>
+          <v-flex xs2 class='mt-3'>
+            {{ (stdBelow/100) | formatNumber('%0.2f')}}
+          </v-flex>
+        </v-layout>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn flat primary @click.native='openConfig=false'>
+          Close
+        </v-btn>
+      </v-card-actions>j
+    </v-card>
+
+  </v-dialog>
+
+
   </v-layout>
 </template>
 
@@ -67,6 +161,9 @@
 
     data () {
       return {
+        stdAbove: 200,
+        stdBelow: 200,
+        openConfig: false,
         intervalId: null,
         chart: null,
         sampleBuffer: [],
@@ -78,11 +175,13 @@
         speedScale: 4,
         weightedMean: 0,
         weightedVar: 0,
-        alphaDecay: 0.005,
-        autoScale: true,
+        scaleSensitivity: 200,
+        autoScale: false,
+        autoScaleIterations: 0,
         boardTime: 0,
         leaveTime: 0,
-        maxTime: 0
+        maxTime: 0,
+        plotFiltered: true,
       }
     },
 
@@ -97,75 +196,51 @@
       updateBuffer (dataPackage) {
         // Update sampling rate.
         dataPackage = JSON.parse(dataPackage)
-        this.timeSeries.append(new Date().getTime(), dataPackage[3])
-      },
-
-      simpleUpdate () {
-        var sample = this.sampleBuffer.shift()
+        if (this.plotFiltered) {
+          var sample = dataPackage[4]
+        } else {
+          var sample = dataPackage[3]
+        }
         if (sample) {
           this.timeSeries.append(new Date().getTime(), sample)
-        }
-        setTimeout(this.simpleUpdate, 20)
-      },
-
-      updateChart () {
-        var elapsedTime = new Date().getTime() - this.startTime
-        var ratio = Math.round(elapsedTime/this.deltaT)
-        console.log(elapsedTime)
-        var sample
-        for (var k=0; k<Math.ceil(ratio); k++) {
-          sample = this.sampleBuffer.shift()
-        }
-        this.startTime = new Date().getTime()
-        if (sample) {
-          this.timeSeries.append(new Date().getTime(), sample)
-          this.boardTime = this.timeBuffer.shift()
-          this.weightedMean = (1 - this.alphaDecay) * this.weightedMean
-            + this.alphaDecay * sample
-          this.weightedVar = (1 - this.alphaDecay) * (this.weightedVar
-            + this.alphaDecay * (sample - this.weightedMean)**2)
-          var std = Math.sqrt(this.weightedVar)
-          var minVal = this.weightedMean - 2*std
-          var maxVal = this.weightedMean + 6*std
           if (this.autoScale) {
+            this.weightedMean = (1 - this.alphaDecay) * this.weightedMean
+              + this.alphaDecay * sample
+            this.weightedVar = (1 - this.alphaDecay) * (this.weightedVar
+              + this.alphaDecay * (sample - this.weightedMean)**2)
+            var std = Math.sqrt(this.weightedVar)
+            var minVal = this.weightedMean - (this.stdBelow/100)*std
+            var maxVal = this.weightedMean + (this.stdAbove/100)*std
             this.topScale = 1000*maxVal
             this.botScale = 1000*minVal
           }
-          setTimeout(this.updateChart, 20)
+
         }
-      }
+      },
+
     },
 
     watch: {
 
       topScale () {
-        this.chart.options.maxValue = this.maxScale
+        this.chart.options.maxValue = this.topScale / 1000
       },
 
       botScale () {
-        this.chart.options.minValue = this.minScale
+        this.chart.options.minValue = this.botScale / 1000
       },
 
       speedScale () {
-        this.chart.options.millisPerPixel = this.pixScale
+        this.chart.options.millisPerPixel = this.speedScale
       }
 
     },
 
     computed: {
 
-      maxScale () {
-        return this.topScale / 1000
-      },
-
-      minScale () {
-        return this.botScale / 1000
-      },
-
-      pixScale () {
-        return this.speedScale
-      }
-
+        alphaDecay () {
+            return Math.pow(10, -this.scaleSensitivity/100)
+        }
     },
 
     mounted () {
@@ -174,9 +249,11 @@
       var options = {}
       options.interpolation = 'linear'
       options.scaleSmoothing = 0.040
-      options.maxValue = this.maxScale
-      options.minValue = this.minScale
-      options.millisPerPixel = this.pixScale
+      options.maxValue = 2.5
+      options.minValue = 0.0
+      this.topScale = 2500
+      this.botScale = 0
+      options.millisPerPixel = this.speedScale
       options.grid = {
         linewidth: 1,
         verticalSections: 4,
@@ -193,7 +270,7 @@
         var y = $('#data').width()
         $('#chart').attr('width',y)
       })
-      setTimeout(this.resize, 200)
+      setTimeout(this.resize, 500)
 
       // Define series options.
       var seriesOptions = {}

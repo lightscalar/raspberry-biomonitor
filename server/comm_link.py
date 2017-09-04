@@ -36,11 +36,14 @@ class Server(threading.Thread):
             while True:
                 data = conn.recv(1024).decode()
                 if data:
-                    try:
-                        obj = json.loads(data)
-                        self.events.on_data_received(obj)
-                    except:
-                        pass
+                    obj = json.loads(data)
+                    self.events.on_data_received(obj)
+                    # try:
+                    #     obj = json.loads(data)
+                    #     self.events.on_data_received(obj)
+                    # except:
+                    #     print('OOPS')
+                    #     pass
         finally:
             s.close()
 

@@ -5,10 +5,11 @@ import numpy as np
 from queue import Queue
 import re
 import serial
-import threading
+from threading import Thread
 from time import time, sleep
 from scipy.signal import butter, lfilter
-from comm_link import *
+from comm_link import Client
+from mathtools.utils import Vessel
 
 
 # Define parameters.
@@ -30,57 +31,61 @@ def find_serial_devices():
     return valid_devices
 
 
-class Biomonitor(threading.Thread):
+class DataSource(Thread):
     '''Connect to biomonitor device and push data to a socket connection.'''
 
-    def __init__(self, sampling_rate=250, freq_cutoff=10, simulated=False):
+    def __init__(self):
         '''See if we can find a valid biomonitor device'''
-        threading.Thread.__init__(self)
-        self.simulated = simulated
+        Thread.__init__(self)
         self.port = None
         self.go = True
 
-        # Set up the filters.
-        filter_order = 5
-        self.sampling_rate = sampling_rate
-        self.sampling_rate = 124.548
-        self.dt = 1/sampling_rate
-        nyquist = 0.5 * sampling_rate
-        f_low = freq_cutoff/nyquist
-        self.a, self.b  = butter(filter_order, f_low, 'low', analog=False)
-
-        # Channel specific stats.
         self.allowed_channels = [0]
-        self.stats = {}
-        for chn in self.allowed_channels:
-            self.stats[chn] = {'zi': np.zeros(filter_order), 'last_send': 0}
 
         # Connect to the hardware.
         self.connect_to_board()
 
-        # Connect to the client.
-        self.connect_to_server()
+        # Connect to the buffer file.
+        self.buffer = {}
+        for chn in self.allowed_channels:
+            self.buffer[chn] = Vessel('buffer-{:02d}.dat'.format(chn))
+        self.clear_buffer()
+        self.chunk_size = 2000
 
-        # Start thread.
+        # Define the workers.
+        self.q = Queue()
+        nb_workers = 10
+        target = self.save_data
+        for _ in range(nb_workers):
+            worker = Thread(target=target, args=(self.q,), daemon=True)
+            worker.start()
+
+        # Start local.
         self.start()
 
-    def connect_to_server(self):
-        '''Connect monitor to local web/socket server.'''
-        connected = False
-        while not connected:
-            self.client = Client()
-            connected = self.client.connected
-            if not connected:
-                print('Cannot connect to port {}.'.format(self.client.port))
-                print('Trying again.')
-                sleep(0.2)
-            else:
-                print('Connected to port {}.'.format(self.client.port))
+    def clear_buffer(self):
+        '''Clear the current data buffer.'''
+        for chn in self.allowed_channels:
+            self.buffer[chn].counter = 0
+            self.buffer[chn].t = []
+            self.buffer[chn].t_sys = []
+            self.buffer[chn].v = []
+
+    def save_data(self, q):
+        '''Save data to the disk.'''
+        while True:
+            data = q.get()
+            chn = data[0]
+            self.buffer[chn].t.append(data[1])
+            self.buffer[chn].v.append(data[2])
+            self.buffer[chn].t_sys.append(data[3])
+            self.buffer[chn].counter += 1
+            if self.buffer[chn].counter > self.chunk_size:
+                self.buffer[chn].save()
+            q.task_done()
 
     def connect_to_board(self):
         '''Attempt to connect to the Biomonitor hardware.'''
-        if self.simulated:
-            return
         while self.port is None:
             valid_ports = find_serial_devices()
             for port in valid_ports:
@@ -121,35 +126,30 @@ class Biomonitor(threading.Thread):
                     pass
         return (channel_number, timestamp, value)
 
-    def filter(self, channel, value):
-        '''Filter the current value.'''
-        zi = self.stats[channel]['zi']
-        y, zf = lfilter(self.a, self.b, [value], zi=zi)
-        self.stats[channel]['zi'] = zf
-        return y[0]
-
     def read_data(self, ser):
         '''Read data, filter data, transmit data across socket.'''
         line = ser.readline()
         chn, timestamp, value = self.parse_biomonitor(line)
         if chn in self.allowed_channels:
-            obj = json.dumps([chn, time(), timestamp, value])
-            self.client.send_json(obj)
+            # self.data[chn].append([chn, timestamp, value])
+            self.q.put([chn, timestamp, value, time()])
 
     def run(self):
         '''Collect data and send it to a socket connection.'''
-        if self.simulated:
-            while self.go:
-                self.read_simulated_data()
         with serial.Serial(self.port, BAUD_RATE) as ser:
             while self.go:
                 self.read_data(ser)
 
     def stop(self):
-        self.client.close()
         self.go = False
 
 if __name__ == '__main__':
 
-    bio = Biomonitor()
+    fountain = DataSource()
+    try:
+        while True:
+            sleep(1)
+    except KeyboardInterrupt:
+        fountain.stop()
+
 
