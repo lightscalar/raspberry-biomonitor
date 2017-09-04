@@ -59,7 +59,7 @@
 
     </v-flex>
   <v-flex xs12 id='data'>
-    <canvas id='chart' height="275"></canvas>
+    <canvas id='chart' height="265"></canvas>
   </v-flex>
 
 
