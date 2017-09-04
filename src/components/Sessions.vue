@@ -73,6 +73,9 @@
 </script>
 
 <style scoped>
+html, body, main {
+  overflow: hidden
+}
 .container {
   padding-top: 85px;
 }

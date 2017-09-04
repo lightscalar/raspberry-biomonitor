@@ -59,7 +59,7 @@
 
     </v-flex>
   <v-flex xs12 id='data'>
-    <canvas id='chart' height="300"></canvas>
+    <canvas id='chart' height="275"></canvas>
   </v-flex>
 
 
@@ -277,7 +277,7 @@
 </script>
 
 <style>
-    html, body, main {
-      overflow: hidden
-    }
+html, body, main {
+  overflow: hidden
+}
 </style>
