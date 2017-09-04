@@ -134,6 +134,7 @@ export default {
 <style scoped>
 html, body, main {
   background-color: #305580;
+  overflow: hidden !important;
 }
 .title-logo {
   letter-spacing: 1em;
