@@ -78,7 +78,7 @@
       <v-card-text>
         <v-layout>
           <v-flex xs4 class='input-group'>
-            <label>Sensitivity</label>
+            <label>Smoothing</label>
           </v-flex>
           <v-flex xs6>
             <v-slider
