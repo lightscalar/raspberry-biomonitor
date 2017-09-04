@@ -83,7 +83,8 @@
   padding: 5px;
 }
 .splash {
-  min-height: 1000px;
+  min-height: 600px;
+  overflow: hidden !important;
 }
 .add-patient {
   color: #305580;
