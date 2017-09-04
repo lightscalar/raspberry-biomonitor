@@ -1,7 +1,6 @@
 <template>
   <v-layout>
     <v-flex xs3>
-      {{456.2 | formatNumber('%0.2f')}}
 
       <v-layout>
         <v-flex>
