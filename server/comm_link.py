@@ -3,15 +3,7 @@ import socket
 from events import Events
 import contextlib
 import json
-
-
-@contextlib.contextmanager
-def accept(s):
-    c,a = s.accept()
-    print('client connected on',a)
-    yield c,a
-    print('client disconnected on',a)
-    c.close()
+from time import sleep
 
 
 class Server(threading.Thread):
@@ -28,22 +20,32 @@ class Server(threading.Thread):
 
     def run(self):
         '''Main loop of server thread.'''
+        def recvall(sock):
+            BUFF_SIZE = 4096 # 4 KiB
+            data = ""
+            while True:
+                part = sock.recv(BUFF_SIZE).decode()
+                data += part
+                if len(part) < BUFF_SIZE:
+                    # either 0 or end of data
+                    break
+            return data
         try:
             s = socket.socket()
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind((self.host, self.port))
             s.listen(1)
             conn, _ = s.accept()
             while True:
-                data = conn.recv(1024).decode()
+                # data = conn.recv(1024).decode()
+                data = recvall(conn)
                 if data:
-                    obj = json.loads(data)
-                    self.events.on_data_received(obj)
-                    # try:
-                    #     obj = json.loads(data)
-                    #     self.events.on_data_received(obj)
-                    # except:
-                    #     print('OOPS')
-                    #     pass
+                    try:
+                        obj = json.loads(data)
+                        self.events.on_data(obj)
+                    except:
+                        print('OOPS')
+                        pass
         finally:
             s.close()
 
@@ -57,12 +59,15 @@ class Client(object):
         '''Connect to the socket.'''
         self.port = port
         self.connected = False
-        self.socket = socket.socket()
-        try:
-            self.socket.connect((host, port))
-            self.connected = True
-        except:
-            print('Connection to port {} failed.'.format(port))
+        while not self.connected:
+            try:
+                self.socket = socket.socket()
+                self.socket.connect((host, port))
+                self.connected = True
+            except:
+                print('Connection to port {} failed.'.format(port))
+                sleep(0.5)
+        print('Connection to port {} established.'.format(port))
 
     def send(self, message):
         '''Send a message through socket.'''

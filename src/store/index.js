@@ -7,7 +7,8 @@ export default new Vuex.Store ({
 
   state: {
 
-    session: {}, sessions: [],
+    session: {},
+    sessions: [],
     monitorStatus: {
       status: false,
       connected: false,
@@ -59,7 +60,9 @@ export default new Vuex.Store ({
     },
 
     getSessions (context) {
-
+      api.listResource('sessions').then( function (resp) {
+        context.commit('setSessions', resp.data)
+      })
     }
 
   },

@@ -96,11 +96,8 @@ export default {
       drawer: true,
       fixed: true,
       items: [
-        { heading: 'Sessions' },
         { icon: 'add_circle', text: 'Add Session', route: 'LandingPage' },
-        { icon: 'archive', text: 'Sessions Archive', route: 'LandingPage'  },
-        { divider: true },
-        { heading: 'Configuration', route: 'LandingPage'  },
+        { icon: 'archive', text: 'Sessions Archive', route: 'Sessions'  },
         { icon: 'settings', text: 'Settings', route: 'LandingPage'  },
         { icon: 'help', text: 'Help', route: 'LandingPage'  },
       ],

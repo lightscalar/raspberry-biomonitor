@@ -8,7 +8,7 @@
           <v-slider
             :disabled='autoScale'
             label="Max"
-            max="2500"
+            max="25000"
             min='0'
             v-model="topScale">
           </v-slider>
@@ -20,7 +20,7 @@
           <v-slider
             :disabled='autoScale'
             label="MIN"
-            max="2500"
+            max="25000"
             min='0'
             v-model="botScale">
           </v-slider>
@@ -55,16 +55,6 @@
          <v-btn icon class='mt-3' @click.native='openConfig = true'>
            <v-icon>settings</v-icon>
          </v-btn>
-       </v-flex>
-      </v-layout>
-
-      <v-layout>
-        <v-flex>
-          <v-checkbox
-            color='primary'
-            v-model='plotFiltered'
-            label='10 Hz Filter'>
-          </v-checkbox>
        </v-flex>
       </v-layout>
 
@@ -120,7 +110,7 @@
         </v-layout>
         <v-layout>
           <v-flex xs4 class='input-group'>
-            <label>Deviations Above</label>
+            <label>Deviations Below</label>
           </v-flex>
           <v-flex xs6>
             <v-slider
@@ -161,7 +151,9 @@
 
     data () {
       return {
-        stdAbove: 200,
+        autoScaleTime: 0,
+        autoScaleInterval: 500,
+        stdAbove: 600,
         stdBelow: 200,
         openConfig: false,
         intervalId: null,
@@ -170,7 +162,7 @@
         timeBuffer: [],
         samplingRate: 0,
         timeSeries: null,
-        topScale: 750,
+        topScale: 7500,
         botScale: 0,
         speedScale: 4,
         weightedMean: 0,
@@ -195,12 +187,8 @@
 
       updateBuffer (dataPackage) {
         // Update sampling rate.
-        dataPackage = JSON.parse(dataPackage)
-        if (this.plotFiltered) {
-          var sample = dataPackage[4]
-        } else {
-          var sample = dataPackage[3]
-        }
+        var currentTime = new Date().getTime()
+        var sample = dataPackage[1]
         if (sample) {
           this.timeSeries.append(new Date().getTime(), sample)
           if (this.autoScale) {
@@ -211,23 +199,24 @@
             var std = Math.sqrt(this.weightedVar)
             var minVal = this.weightedMean - (this.stdBelow/100)*std
             var maxVal = this.weightedMean + (this.stdAbove/100)*std
-            this.topScale = 1000*maxVal
-            this.botScale = 1000*minVal
+            if ( (currentTime - this.autoScaleTime) > this.autoScaleInterval) {
+              this.topScale = 10000*maxVal
+              this.botScale = 10000*minVal
+              this.autoScaleTime = new Date().getTime()
+            }
           }
-
         }
       },
-
     },
 
     watch: {
 
       topScale () {
-        this.chart.options.maxValue = this.topScale / 1000
+        this.chart.options.maxValue = this.topScale / 10000
       },
 
       botScale () {
-        this.chart.options.minValue = this.botScale / 1000
+        this.chart.options.minValue = this.botScale / 10000
       },
 
       speedScale () {

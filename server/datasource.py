@@ -49,7 +49,8 @@ class DataSource(Thread):
         self.buffer = {}
         for chn in self.allowed_channels:
             self.buffer[chn] = Vessel('buffer-{:02d}.dat'.format(chn))
-        self.clear_buffer()
+            self.buffer[chn].channel_number = chn
+            self.clear_buffer(chn)
         self.chunk_size = 2000
 
         # Define the workers.
@@ -63,13 +64,12 @@ class DataSource(Thread):
         # Start local.
         self.start()
 
-    def clear_buffer(self):
+    def clear_buffer(self, channel):
         '''Clear the current data buffer.'''
-        for chn in self.allowed_channels:
-            self.buffer[chn].counter = 0
-            self.buffer[chn].t = []
-            self.buffer[chn].t_sys = []
-            self.buffer[chn].v = []
+        self.buffer[channel].counter = 0
+        self.buffer[channel].t = []
+        self.buffer[channel].t_sys = []
+        self.buffer[channel].v = []
 
     def save_data(self, q):
         '''Save data to the disk.'''
@@ -80,8 +80,9 @@ class DataSource(Thread):
             self.buffer[chn].v.append(data[2])
             self.buffer[chn].t_sys.append(data[3])
             self.buffer[chn].counter += 1
-            if self.buffer[chn].counter > self.chunk_size:
+            if self.buffer[chn].counter == self.chunk_size:
                 self.buffer[chn].save()
+                self.clear_buffer(chn)
             q.task_done()
 
     def connect_to_board(self):
@@ -142,6 +143,7 @@ class DataSource(Thread):
 
     def stop(self):
         self.go = False
+
 
 if __name__ == '__main__':
 
