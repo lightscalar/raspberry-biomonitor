@@ -7,8 +7,8 @@
         <v-btn
           v-if='!isRecording'
           @click.native='toggleRecord'
-          error large
-          class='white--text red darken-3'>
+          primary large
+          class='white--text primary'>
           <v-icon class='white--text' left>fiber_manual_record</v-icon>
           Record
         </v-btn>
