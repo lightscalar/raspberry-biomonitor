@@ -106,4 +106,7 @@
 .form {
   margin-top: 200px;
 }
+html, body, main {
+  overflow: hidden
+}
 </style>

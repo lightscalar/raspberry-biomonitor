@@ -132,7 +132,7 @@ export default {
 </script>
 
 <style scoped>
-html, body, main {
+html, body, main, .container {
   background-color: #305580;
   overflow: hidden !important;
 }

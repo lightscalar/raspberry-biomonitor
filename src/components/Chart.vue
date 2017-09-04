@@ -276,8 +276,8 @@
 
 </script>
 
-<style>
-html, body, main {
-  overflow: hidden
+<style scoped>
+html, body, main, .container {
+  overflow: hidden !important;
 }
 </style>
