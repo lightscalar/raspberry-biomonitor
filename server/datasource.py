@@ -24,7 +24,7 @@ COVFAC = MAXREF*(1/MAXVAL)
 def find_serial_devices():
     '''Find serial devices connected to the computer.'''
     if sys.platform.startswith('linux'):
-        devices = glob('/dev/tty[A-Za-z]*')
+        _valid_devices = glob('/dev/tty[A-Za-z]*')
     else:
         valid_devices = glob('/dev/tty.usbmodem*')
     return valid_devices
