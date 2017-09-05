@@ -4,6 +4,7 @@ from glob import glob
 import numpy as np
 from queue import Queue
 import re
+import sys
 import serial
 from threading import Thread
 from time import time, sleep
