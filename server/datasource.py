@@ -9,7 +9,7 @@ from threading import Thread
 from time import time, sleep
 from scipy.signal import butter, lfilter
 from comm_link import Client
-from mathtools.utils import Vessel
+from utils import Vessel
 
 
 # Define parameters.
