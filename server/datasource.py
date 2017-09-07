@@ -9,8 +9,9 @@ import serial
 from threading import Thread
 from time import time, sleep
 from scipy.signal import butter, lfilter
-from comm_link import Client
-from utils import Vessel
+from sockets import Client
+# from utils import Vessel
+# from datastore import *
 
 
 # Define parameters.
@@ -38,6 +39,7 @@ class DataSource(Thread):
         Thread.__init__(self)
         self.port = None
         self.go = True
+        self.client = Client()
 
         self.allowed_channels = [0]
 
