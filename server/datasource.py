@@ -1,17 +1,11 @@
-from flask_socketio import SocketIO, send, emit
-from flask import Flask
 from glob import glob
-import numpy as np
 from queue import Queue
 import re
 import sys
 import serial
 from threading import Thread
 from time import time, sleep
-from scipy.signal import butter, lfilter
-from sockets import Client
-# from utils import Vessel
-# from datastore import *
+from utils import Vessel
 
 
 # Define parameters.
@@ -31,7 +25,7 @@ def find_serial_devices():
     return valid_devices
 
 
-class DataSource(Thread):
+class Oracle(Thread):
     '''Connect to biomonitor device and push data to a socket connection.'''
 
     def __init__(self):
@@ -39,7 +33,7 @@ class DataSource(Thread):
         Thread.__init__(self)
         self.port = None
         self.go = True
-        self.client = Client()
+        self.last_time = time()
 
         self.allowed_channels = [0]
 
@@ -84,6 +78,8 @@ class DataSource(Thread):
             if self.buffer[chn].counter == self.chunk_size:
                 self.buffer[chn].save()
                 self.clear_buffer(chn)
+                print(time() - self.last_time)
+                self.last_time = time()
             q.task_done()
 
     def connect_to_board(self):
@@ -148,11 +144,11 @@ class DataSource(Thread):
 
 if __name__ == '__main__':
 
-    fountain = DataSource()
+    oracle = Oracle()
     try:
         while True:
             sleep(1)
     except KeyboardInterrupt:
-        fountain.stop()
+        oracle.stop()
 
 

@@ -186,6 +186,7 @@
 
       updateBuffer (dataPackage) {
         // Update sampling rate.
+        console.log(dataPackage)
         var currentTime = new Date().getTime()
         var sample = dataPackage[1]
         if (sample) {
@@ -251,7 +252,7 @@
         fillStyle: '#000000',
         fontSize: 18}
       this.chart = new SmoothieChart(options)
-      this.chart.streamTo(document.getElementById('chart'), 1000)
+      this.chart.streamTo(document.getElementById('chart'), 3000)
 
       // Let's update the size of the graph if windows resize...
       $( window ).resize(function() {
@@ -271,6 +272,7 @@
       this.chart.addTimeSeries(this.timeSeries, seriesOptions)
       this.$store.dispatch('establishSocketConnection')
       this.$store.state.socket.on('data_package', this.updateBuffer)
+      this.$store.state.socket.on('disconnect', function() {console.log('Disconnected')})
     }
   }
 

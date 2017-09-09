@@ -1,15 +1,11 @@
-from flask_socketio import SocketIO, send, emit
-from flask import Flask
-import glob
-import numpy as np
+from glob import glob
 from queue import Queue
 import re
 import sys
 import serial
 from threading import Thread
 from time import time, sleep
-from sockets import Client
-from ipdb import set_trace as debug
+from utils import Vessel
 
 
 # Define parameters.
@@ -22,16 +18,11 @@ COVFAC = MAXREF*(1/MAXVAL)
 
 def find_serial_devices():
     '''Find serial devices connected to the computer.'''
-    if sys.platform.startswith('win'):
-        ports = ['COM%s' % (i + 1) for i in range(256)]
-    elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
-        # this excludes your current terminal "/dev/tty"
-        ports = glob.glob('/dev/tty[A-Za-z]*')
-    elif sys.platform.startswith('darwin'):
-        ports = glob.glob('/dev/tty.usbmodem*')
+    if sys.platform.startswith('linux'):
+        _valid_devices = glob('/dev/tty[A-Za-z]*')
     else:
-        raise EnvironmentError('Unsupported platform')
-    return ports
+        valid_devices = glob('/dev/tty.usbmodem*')
+    return valid_devices
 
 
 class Oracle(Thread):
@@ -42,7 +33,8 @@ class Oracle(Thread):
         Thread.__init__(self)
         self.port = None
         self.go = True
-        self.client = Client()
+        self.last_time = time()
+
         self.allowed_channels = [0]
 
         # Connect to the hardware.
@@ -51,8 +43,8 @@ class Oracle(Thread):
         # Connect to the buffer file.
         self.buffer = {}
         for chn in self.allowed_channels:
-            self.buffer[chn] = {}
-            self.buffer[chn]['channel_number'] = chn
+            self.buffer[chn] = Vessel('buffer-{:02d}.dat'.format(chn))
+            self.buffer[chn].channel_number = chn
             self.clear_buffer(chn)
         self.chunk_size = 2000
 
@@ -69,23 +61,25 @@ class Oracle(Thread):
 
     def clear_buffer(self, channel):
         '''Clear the current data buffer.'''
-        self.buffer[channel]['counter'] = 0
-        self.buffer[channel]['t'] = []
-        self.buffer[channel]['t_sys'] = []
-        self.buffer[channel]['val'] = []
+        self.buffer[channel].counter = 0
+        self.buffer[channel].t = []
+        self.buffer[channel].t_sys = []
+        self.buffer[channel].v = []
 
     def save_data(self, q):
         '''Save data to the disk.'''
         while True:
             data = q.get()
             chn = data[0]
-            self.buffer[chn]['t'].append(data[1])
-            self.buffer[chn]['val'].append(data[2])
-            self.buffer[chn]['t_sys'].append(data[3])
-            self.buffer[chn]['counter'] += 1
-            if self.buffer[chn]['counter'] == self.chunk_size:
-                self.client.send_json(self.buffer)
+            self.buffer[chn].t.append(data[1])
+            self.buffer[chn].v.append(data[2])
+            self.buffer[chn].t_sys.append(data[3])
+            self.buffer[chn].counter += 1
+            if self.buffer[chn].counter == self.chunk_size:
+                self.buffer[chn].save()
                 self.clear_buffer(chn)
+                # print(time() - self.last_time)
+                # self.last_time = time()
             q.task_done()
 
     def connect_to_board(self):
@@ -154,8 +148,7 @@ if __name__ == '__main__':
     try:
         while True:
             sleep(1)
-    except:
-        print('Shutting down the oracle')
+    except KeyboardInterrupt:
         oracle.stop()
 
 

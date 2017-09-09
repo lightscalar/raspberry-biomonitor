@@ -41,7 +41,8 @@ class DataStore(object):
 
 
 if __name__ == '__main__':
-    import numpy as np
-    d = DataStore()
-    d.write('mjl.03', 0, 'time', np.random.randn(5000))
-    d.write('mjl.03', 0, 'values', np.random.randn(5000))
+    pass
+    # import numpy as np
+    # d = DataStore()
+    # d.write('mjl.03', 0, 'time', np.random.randn(5000))
+    # d.write('mjl.03', 0, 'values', np.random.randn(5000))

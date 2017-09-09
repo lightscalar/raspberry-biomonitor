@@ -1,0 +1,11 @@
+('/Users/mjl/local/biomonitor/app/testapp/build/nvs/setuptools-27.2.0-py3.5.egg',
+ None,
+ {'*.pyc', 'EGG-INFO', '*.so', '*.py', '*.pyd', '*.pyo'},
+ 'DATA',
+ [('setuptools/script (dev).tmpl',
+   '/Users/mjl/local/biomonitor/app/testapp/build/nvs/setuptools-27.2.0-py3.5.egg/setuptools/script '
+   '(dev).tmpl',
+   'DATA'),
+  ('setuptools/script.tmpl',
+   '/Users/mjl/local/biomonitor/app/testapp/build/nvs/setuptools-27.2.0-py3.5.egg/setuptools/script.tmpl',
+   'DATA')])

@@ -1,12 +1,19 @@
-import ujson
-import inflect
+import eventlet
+eventlet.monkey_patch()
 from bson import ObjectId
-from tinydb import TinyDB, Query
-from time import time
+import inflect
 from ipdb import set_trace as debug
+import time
+from tinydb import TinyDB, Query
+import ujson
 
 
-class Solid(object):
+def current_time():
+    '''Return a nice date/time string.'''
+    return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+
+
+class SolidDB(object):
 
     def __init__(self, store_name):
         '''Connect to instance of TinyDB.'''
@@ -22,6 +29,8 @@ class Solid(object):
         table_name = self.pluralize(model_name)
         data['_id'] = self.get_id()
         data['_model'] = table_name
+        data['createdAt'] = current_time()
+        data['updatedAt'] = current_time()
         self.db.table(table_name).insert(data)
         return data
 
@@ -39,6 +48,7 @@ class Solid(object):
         current_doc = self.find_by_id(_id)
         table = self.db.table(current_doc['_model'])
         q = Query()
+        new_doc['updatedAt'] = current_time()
         table.update(new_doc, q._id==_id)
         current_doc.update(new_doc)
         return current_doc
@@ -72,5 +82,5 @@ class Solid(object):
 
 
 if __name__ == '__main__':
-    db = Solid('data/db.json')
+    db = SolidDB('data/db.json')
 

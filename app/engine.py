@@ -1,65 +1,97 @@
-import numpy as np
 from events import Events
-from sockets import Server
 from datastore import *
-from ipdb import set_trace as debug
 from filters import *
+from ipdb import set_trace as debug
+import numpy as np
+from queue import Queue
+from sockets import Server
+from threading import Thread
+from time import time
+from watchdog import Watchdog
+from utils import Vessel
 
 
 class Engine(object):
+    '''Main data controller for the biomonitor. Listens for data from the
+       Oracle, then filters/processes it. If we're recording, we save it
+       to the hdf5 datastore. If broadcast is enabled, we fire an event so
+       sockets above can handle appropriately shipping data to the UI.'''
 
     def __init__(self):
-        '''Set up socket connections/event bus.'''
-        self.server = Server()
+
+        # Set up socket connections/event bus.
         self.events = Events()
 
         # Boot up datastore/etc.
-        self.valid_keys = ['t', 't_sys', 'val', 'filtered']
+        self.valid_keys = ['t', 't_sys', 'v', 'filtered']
         self.datastore = DataStore()
-        self.session_id = '2017.09.07.b'
-        self.is_recording = True
+        self.session_id = None
+        self.is_recording = False
         self.is_broadcasting = True
+        self.counter = 0
 
-        # Configure filters.
-        self.allowed_channels = [0, 1, 2]
+        # Configure filtering.
+        self.allowed_channels = [0]
         self.freq_cutoff = 10
-        self.filter_order = 5
-        self.downsample_rate = 50
+        self.filter_order = 6
+        self.downsample_rate = 100
         self.zi = {}
+        self.channel_data = {}
+        self.buffers_to_watch = []
         for chn in self.allowed_channels:
             self.zi[chn] = np.zeros(self.filter_order)
+            self.channel_data[chn] = []
+            self.buffers_to_watch.append('buffer-{:02d}.dat'.format(chn))
+
+        # Listen for buffer changes:
+        self.watchdog = Watchdog(self.buffers_to_watch)
+
+        # Set up threading to handle i/o in background.
+        self.q = Queue()
+        nb_workers = 1
+        target = self.data_received
+        for _ in range(nb_workers):
+            worker = Thread(target=target, args=(self.q,), daemon=True)
+            worker.start()
 
         # Listen for data from the server.
-        self.server.events.on_data += self.data_received
+        self.watchdog.events.on_change += self.push_to_queue
+        self.last_time = time()
 
-    def data_received(self, data):
+    def push_to_queue(self, data):
+        '''Add received data to the queue.'''
+        self.q.put(data)
+
+    def data_received(self, q):
         '''Data has been received by the server.'''
-        print(data)
-        # Broadcast data to socket connections.
-        # self.events.on_data(data)
+        while True:
+            buffer_name = q.get()
+            d = Vessel(buffer_name)
+            ichn = int(d.channel_number)
 
-        # If we have a session id, save the data.
-        for channel in data.keys():
-            ichn = int(channel)
-            d = data[channel]
-            d['filtered'], self.zi[ichn] = \
-                lowpass(d['t'], d['val'], freq_cutoff=self.freq_cutoff,\
-                filter_order=self.filter_order, zi=self.zi[ichn])
+            # Filter the data.
+            d.filtered, self.zi[ichn] = lowpass(d.t, d.v,\
+                    freq_cutoff=self.freq_cutoff,\
+                    filter_order=self.filter_order, zi=self.zi[ichn])
+            print(self.zi)
 
-            # Broadcast the data.
+            # Downsample and broadcast the data.
             if self.is_broadcasting:
-                downsampled = downsample(d['t'], d['filtered'],\
+                t_down, s_down = downsample(d.t, d.filtered,\
                         self.downsample_rate)
-                package = [ichn, downsampled]
+                # t_down, s_down = dumb_downsample(d.t, d.filtered,\
+                #         self.downsample_rate)
+                package = [ichn, self.downsample_rate, s_down]
                 self.events.on_data(package)
 
-            # Save the data.
+            # Save the data to h5df store.
             if self.is_recording:
-                for key, val in d.items():
-                    if key in self.valid_keys:
-                        self.datastore.write(self.session_id, ichn, key,\
-                                np.array(val))
+                for key in self.valid_keys:
+                    val = np.array(d.__dict__[key])
+                    self.datastore.write(self.session_id, ichn, key, val)
 
+            # End data processing.
+            q.task_done()
 
     def start_recording(self, session_id):
         '''Start saving data to datastore.'''
@@ -69,13 +101,8 @@ class Engine(object):
     def stop_recording(self):
         '''Stop streaming to the datastore.'''
         self.session_id = None
-        seldf.is_recording = False
+        self.is_recording = False
 
     def kill(self):
         '''Close the socket connection.'''
         self.server.close()
-
-
-if __name__ == '__main__':
-    e = Engine()
-

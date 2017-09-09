@@ -1,5 +1,7 @@
+import eventlet
+eventlet.monkey_patch()
 import threading
-import socket
+from eventlet.green import socket
 from events import Events
 import contextlib
 import ujson
@@ -10,7 +12,7 @@ from ipdb import set_trace as debug
 class Server(threading.Thread):
     '''Socket server.'''
 
-    def __init__(self, host='127.0.0.1', port=2048):
+    def __init__(self, host='127.0.0.1', port=5300):
         '''Initialize host and port.'''
         threading.Thread.__init__(self)
         self.host = host
@@ -42,8 +44,12 @@ class Server(threading.Thread):
                 # data = conn.recv(1024).decode()
                 data = recvall(conn)
                 if data:
-                    obj = ujson.loads(data)
-                    self.events.on_data(obj)
+                    try:
+                        obj = ujson.loads(data)
+                        self.events.on_data(obj)
+                    except:
+                        print('Failed to decode JSON')
+                        pass
                     # try:
                     #     obj = ujson.loads(data)
                     #     self.events.on_data()
@@ -59,7 +65,7 @@ class Server(threading.Thread):
 
 class Client(object):
 
-    def __init__(self, host='127.0.0.1', port=2048):
+    def __init__(self, host='127.0.0.1', port=5300):
         '''Connect to the socket.'''
         self.port = port
         self.connected = False

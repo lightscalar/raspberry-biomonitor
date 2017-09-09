@@ -1,14 +1,18 @@
+from eventlet import wsgi
 from flask import Flask, request, jsonify, Response
 from flask_restful import Resource, Api
 from flask_cors import CORS
-from solid_db import *
 from ipdb import set_trace as debug
+from sixer import sixer
+from solid_db import *
+
 
 '''RESTFUL API for the Biomonitor.'''
+PORT = 5100
 app = Flask(__name__)
 CORS(app)
 api = Api(app)
-db = Solid('data/db.json')
+db = SolidDB('data/db.json')
 
 
 class Sessions(Resource):
@@ -21,6 +25,7 @@ class Sessions(Resource):
     def post(self):
         # Create
         data = request.json
+        data['hid'] = sixer()
         data = db.insert('session', data)
         return data
 
@@ -51,5 +56,7 @@ api.add_resource(Session, '/session/<string:_id>')
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    wsgi.server(eventlet.listen(('localhost', PORT)), app)
+    # http_server = WSGIServer(('', PORT), app)
+    # http_server.serve_forever()
 
