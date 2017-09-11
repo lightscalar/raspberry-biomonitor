@@ -44,7 +44,7 @@
                 </v-text-field>
               </v-flex>
 
-              <v-flex xs12 lg6>
+              <v-flex xs12 lg4 offset-lg1>
                 <v-select
                   v-bind:items="cohorts"
                   label="Cohort"
