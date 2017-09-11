@@ -64,7 +64,10 @@ class Engine(object):
         '''Data has been received by the server.'''
         while True:
             buffer_name = q.get()
-            d = Vessel(buffer_name)
+            try:
+                d = Vessel(buffer_name)
+            except:
+                print('Problem reading data.')
             ichn = int(d.channel_number)
 
             # Filter the data.

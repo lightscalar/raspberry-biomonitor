@@ -11,7 +11,7 @@
                 Home
               </v-breadcrumbs-item>
               <v-breadcrumbs-item :href="'#/session/'+session._id">
-                {{session.hid}}
+                <span class='upper'>{{session.hid}}</span>
               </v-breadcrumbs-item>
               <v-breadcrumbs-item>
                 Annotation
@@ -358,5 +358,8 @@ import Messenger from "./Messenger"
 }
 .list__tile:hover {
     background-color: #efefef !important;
+}
+.upper {
+  text-transform: uppercase;
 }
 </style>

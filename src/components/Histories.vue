@@ -12,7 +12,7 @@
                 Home
               </v-breadcrumbs-item>
               <v-breadcrumbs-item :href="'#/session/' + session._id">
-                {{session.hid}}
+                <span class='upper'>{{session.hid}}</span>
               </v-breadcrumbs-item>
               <v-breadcrumbs-item>
                 Histories
@@ -202,5 +202,8 @@ p {
   background-color: white;
 }
 .boolbar {
+}
+.upper {
+  text-transform: uppercase;
 }
 </style>

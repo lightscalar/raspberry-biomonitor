@@ -20,7 +20,7 @@
           :items='sessions'>
           <template slot="items" scope="props" >
             <tr @click='visitSession(props.item)'>
-              <td><h5>{{ props.item.hid }}</h5></td>
+              <td><h5 class='upper'>{{ props.item.hid }}</h5></td>
               <td>{{ props.item.createdAt }}</td>
             </tr>
           </template>
@@ -85,5 +85,8 @@ tr {
 h5 {
   margin-top: 10px;
   color: #c62828;
+}
+.upper {
+  text-transform: uppercase;
 }
 </style>
