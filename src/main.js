@@ -7,6 +7,8 @@ import App from './App'
 import router from './router'
 import Vuex from 'vuex'
 import store from './store'
+import moment from 'moment'
+window.moment = moment
 
 Vue.config.productionTip = false
 Vue.use(Vuex)
@@ -27,3 +29,23 @@ window.router = app.$router
 Vue.filter('formatNumber', function(value, formatString) {
   return sprintf(formatString, value)
 })
+
+// Quick GUID generator.
+function s4() {
+  return Math.floor((1 + Math.random()) * 0x10000)
+    .toString(16)
+    .substring(1);
+}
+
+window.guid = function () {
+  return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+    s4() + '-' + s4() + s4() + s4();
+}
+
+// Modify local storage!
+Storage.prototype.setObj = function(key, obj) {
+    return this.setItem(key, JSON.stringify(obj))
+}
+Storage.prototype.getObj = function(key) {
+    return JSON.parse(this.getItem(key))
+}

@@ -1,7 +1,6 @@
 from events import Events
 from datastore import *
 from filters import *
-from ipdb import set_trace as debug
 import numpy as np
 from queue import Queue
 from sockets import Server
@@ -31,7 +30,7 @@ class Engine(object):
         self.counter = 0
 
         # Configure filtering.
-        self.allowed_channels = [0]
+        self.allowed_channels = [0,1]
         self.freq_cutoff = 10
         self.filter_order = 6
         self.downsample_rate = 100
@@ -73,14 +72,11 @@ class Engine(object):
             d.filtered, self.zi[ichn] = lowpass(d.t, d.v,\
                     freq_cutoff=self.freq_cutoff,\
                     filter_order=self.filter_order, zi=self.zi[ichn])
-            print(self.zi)
 
             # Downsample and broadcast the data.
             if self.is_broadcasting:
                 t_down, s_down = downsample(d.t, d.filtered,\
                         self.downsample_rate)
-                # t_down, s_down = dumb_downsample(d.t, d.filtered,\
-                #         self.downsample_rate)
                 package = [ichn, self.downsample_rate, s_down]
                 self.events.on_data(package)
 

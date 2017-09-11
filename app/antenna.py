@@ -3,7 +3,6 @@ eventlet.monkey_patch()
 from collections import deque
 from threading import Thread
 from time import sleep, time
-from ipdb import set_trace as debug
 from queue import Queue
 
 
@@ -16,7 +15,7 @@ class Antenna(object):
         self.socket = socket
         self.go = True
         self.queue = {}
-        self.allowed_channels = [0]
+        self.allowed_channels = [0, 1]
         self.sample_rate = 50
         for chn in self.allowed_channels:
             self.queue[chn] = deque([])

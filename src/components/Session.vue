@@ -3,7 +3,23 @@
     <v-card>
       <v-card-title>
         <span class='human-id'>{{session.hid}}</span>
+
         <v-spacer></v-spacer>
+        <v-btn primary flat download :to="{name:'Download', params:{id:id}}">
+          <v-icon left>file_download</v-icon>
+          Download Data
+        </v-btn>
+
+        <v-btn
+          @click.native='annotate'
+          primary large
+          class='white--text primary'>
+          <v-icon class='white--text' left >
+            comment
+          </v-icon>
+          Add Annotation
+        </v-btn>
+
         <v-btn
           v-if='!isRecording'
           @click.native='toggleRecord'
@@ -16,7 +32,7 @@
           v-else
           @click.native='toggleRecord'
           primary large
-          class='white--text'>
+          class='white--text red darken-3'>
           <v-icon class='white--text' left>pause</v-icon>
           Pause
         </v-btn>
@@ -24,11 +40,16 @@
     </v-card>
     <br/>
 
+
+    <div v-for='channel in availableChannels' :key='channel'>
     <v-card>
-      <v-card-text>
-        <chart></chart>
+      <v-card-text >
+        <chart :channelNumber='channel'>
+        </chart>
       </v-card-text>
     </v-card>
+    </br>
+    </div>
 
   </v-container>
 </template>
@@ -46,13 +67,17 @@ export default {
   data () {
 
     return {
-
+      availableChannels: [0, 1],
       isRecording: false,
-
+      activeChannel: '0'
     }
   },
 
   methods: {
+
+    annotate () {
+      this.$router.push({'name': 'Annotate', params: {id: this.id}})
+    },
 
     updateRate (rate) {
       this.samplingRate = rate
@@ -80,7 +105,6 @@ export default {
   mounted () {
     console.log('Mounted!')
     this.$store.dispatch('getSession', this.id)
-
   }
 }
 
@@ -88,7 +112,6 @@ export default {
 
 <style scoped>
 html, body, main, .container {
-  overflow: hidden !important;
 }
 .container {
   padding-top: 85px;
@@ -98,5 +121,4 @@ html, body, main, .container {
   font-size: 40px;
   color: #c62828;
 }
-
 </style>

@@ -19,7 +19,10 @@ class Watchdog(Thread):
         while self.go:
             sleep(0.01)
             for itr, target_file in enumerate(self.target_files):
-                stamp = os.stat(target_file).st_mtime
+                try:
+                    stamp = os.stat(target_file).st_mtime
+                except:
+                    stamp = self._cached_stamps[itr]
                 if stamp != self._cached_stamps[itr]:
                     self._cached_stamps[itr] = stamp
                     self.events.on_change(target_file)

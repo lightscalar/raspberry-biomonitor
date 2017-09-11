@@ -1,0 +1,30 @@
+HISTORIES
+---------
+
+Current Medications -- 2017 September 11 | 1:26:38 pm
+---------------------------------------------------
+What medications is the patient currently taking?
+---------------------------------------------------
+Asprin:........................True [Too much aspirin!]
+
+
+SNAPSHOTS
+---------
+
+Vital Signs -- 2017 September 11 | 1:26:20 pm
+---------------------------------------------------
+Blood pressure; body temperature; etc.
+---------------------------------------------------
+Heart Rate:....................65 (beats/minute)
+Systolic:......................120 (mmHg)
+Diastolic:.....................80 (mmHg)
+Mean Pressure:.................100 (mmHg)
+
+
+Notes -- 2017 September 11 | 1:26:32 pm
+---------------------------------------------------
+Anything interesting happen to the patient?
+---------------------------------------------------
+Note:..........................Cool guy
+
+

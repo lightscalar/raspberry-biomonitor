@@ -6,7 +6,6 @@ from events import Events
 import contextlib
 import ujson
 from time import sleep
-from ipdb import set_trace as debug
 
 
 class Server(threading.Thread):

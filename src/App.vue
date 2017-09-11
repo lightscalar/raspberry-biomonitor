@@ -5,9 +5,8 @@
       <v-btn
         icon
         class='menu-btn'
-        @click.native.stop="rightDrawer = !rightDrawer"
-      >
-        <v-icon class='menu-btn'>menu</v-icon>
+        @click.native.stop="rightDrawer = !rightDrawer">
+      <v-icon class='menu-btn'>menu</v-icon>
       </v-btn>
       </v-toolbar-side-icon>
       <a href='/#'>
@@ -96,11 +95,19 @@ export default {
       drawer: true,
       fixed: true,
       items: [
+        { heading: 'Recording Sessions' },
         { icon: 'add_circle', text: 'Add Session', route: 'LandingPage' },
-        { icon: 'archive', text: 'Sessions Archive', route: 'Sessions'  },
-        { icon: 'settings', text: 'Settings', route: 'LandingPage'  },
+        { icon: 'library_books', text: 'Session Library', route: 'Sessions'},
+        { divider: true },
+        { heading: 'Cohort Management' },
+        { icon: 'add_circle', text: 'Add Cohort', route:'CreateCohort'},
+        { icon: 'people', text: 'Cohort Library', route: 'Cohorts' },
+        { divider: true },
+        { heading: 'Settings' },
+        { icon: 'settings', text: 'Configuration', route: 'LandingPage'  },
         { icon: 'help', text: 'Help', route: 'LandingPage'  },
       ],
+
       miniVariant: false,
       right: true,
       rightDrawer: false,
@@ -134,7 +141,6 @@ export default {
 <style scoped>
 html, body, main, .container {
   background-color: #305580;
-  overflow: hidden !important;
 }
 .title-logo {
   letter-spacing: 1em;
@@ -152,5 +158,8 @@ html, body, main, .container {
 }
 .subheader {
   color: #c62828 !important;
+}
+.list__tile__title {
+    color: #305580 !important
 }
 </style>

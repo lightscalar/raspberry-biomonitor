@@ -35,7 +35,7 @@ class Oracle(Thread):
         self.go = True
         self.last_time = time()
 
-        self.allowed_channels = [0]
+        self.allowed_channels = [0, 1]
 
         # Connect to the hardware.
         self.connect_to_board()
@@ -46,11 +46,11 @@ class Oracle(Thread):
             self.buffer[chn] = Vessel('buffer-{:02d}.dat'.format(chn))
             self.buffer[chn].channel_number = chn
             self.clear_buffer(chn)
-        self.chunk_size = 2000
+        self.chunk_size = 1000
 
         # Define the workers.
         self.q = Queue()
-        nb_workers = 10
+        nb_workers = len(self.allowed_channels)
         target = self.save_data
         for _ in range(nb_workers):
             worker = Thread(target=target, args=(self.q,), daemon=True)

@@ -2,6 +2,7 @@ from antenna import Antenna
 from engine import Engine
 from flask import Flask
 from flask_socketio import SocketIO, send, emit
+from prepare_downloads import *
 import signal
 import sys
 
@@ -38,6 +39,14 @@ def disconnected():
     '''System is disconnected.'''
     connection_status = False
     print('Disconnected from client')
+
+
+@socketio.on('downloadData')
+def prepare_data(session_id):
+    '''System is disconnected.'''
+    print('Preparing data for session {}'.format(session_id))
+    file_location = create_csv(session_id)
+    socketio.emit('dataReady', file_location)
 
 
 @socketio.on('start_record')

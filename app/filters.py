@@ -1,5 +1,3 @@
-# import eventlet
-# eventlet.monkey_patch()
 import numpy as np
 from scipy.signal import butter, lfilter
 

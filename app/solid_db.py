@@ -1,8 +1,5 @@
-import eventlet
-eventlet.monkey_patch()
 from bson import ObjectId
 import inflect
-from ipdb import set_trace as debug
 import time
 from tinydb import TinyDB, Query
 import ujson

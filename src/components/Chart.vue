@@ -1,90 +1,31 @@
 <template>
   <v-layout>
-    <v-flex xs5>
-
+    <v-flex xs4 class='pr-4'>
       <v-layout>
+      <v-flex xs4>
+        <h3 class='blue--text text--darken-3'>{{channelName}}</h3>
+      </v-flex>
         <v-flex>
-          <v-slider
-            :disabled='autoScale'
-            label="Max"
-            max="25000"
-            min='0'
-            v-model="topScale">
-          </v-slider>
-        </v-flex>
-      </v-layout>
-
-      <v-layout>
-        <v-flex>
-          <v-slider
-            :disabled='autoScale'
-            label="MIN"
-            max="25000"
-            min='0'
-            v-model="botScale">
-          </v-slider>
-        </v-flex>
-      </v-layout>
-
-      <v-layout>
-        <v-flex>
-          <v-slider
-            label="TIME"
-            max="20"
-            min='0'
-            v-model="speedScale">
-          </v-slider>
-        </v-flex>
-      </v-layout>
-
-      <v-layout>
-        <v-flex xs7>
-          <!-- <v-btn -->
-          <!--   primary -->
-          <!--   @click.native='autoScale=true; autoScaleIterations=0'> -->
-          <!--   AutoScale -->
-          <!-- </v-btn> -->
           <v-checkbox
+            @change='setConfig'
             color='primary'
             v-model='autoScale'
             label='Autoscale'>
           </v-checkbox>
-       </v-flex>
-       <v-flex xs4>
-         <v-btn icon class='mt-3' @click.native='openConfig = true'>
-           <v-icon>settings</v-icon>
-         </v-btn>
-       </v-flex>
+        </v-flex>
       </v-layout>
-
-    </v-flex>
-  <v-flex xs12 id='data'>
-    <canvas id='chart' height="275"></canvas>
-  </v-flex>
-
-
-  <v-dialog
-    width='500px'
-    v-model='openConfig'
-    persistent>
-    <v-card>
-      <v-card-title>
-        <v-subheader>
-        AutoScale Options
-        </v-subheader>
-      </v-card-title>
-      <v-divider></v-divider>
-      <v-card-text>
         <v-layout>
           <v-flex xs4 class='input-group'>
             <label>Smoothing</label>
           </v-flex>
           <v-flex xs6>
             <v-slider
-              max='300'
-              min='0'
-              step="1"
-              v-model='scaleSensitivity'>
+              @input='setConfig'
+               max='300'
+               min='0'
+               :disabled='!autoScale'
+               step="1"
+               v-model='scaleSensitivity'>
             </v-slider>
           </v-flex>
           <v-flex xs2 class='mt-3'>
@@ -97,10 +38,12 @@
           </v-flex>
           <v-flex xs6>
             <v-slider
-              max='1000'
-              min='10'
-              step="1"
-              v-model='stdAbove'>
+               @input='setConfig'
+               max='1000'
+               min='10'
+               :disabled='!autoScale'
+               step="1"
+               v-model='stdAbove'>
             </v-slider>
           </v-flex>
           <v-flex xs2 class='mt-3'>
@@ -113,28 +56,42 @@
           </v-flex>
           <v-flex xs6>
             <v-slider
-              max='1000'
-              min='10'
-              step="1"
-              v-model='stdBelow'>
-            </v-slider>
+               :disabled='!autoScale'
+               @input='setConfig'
+               max='1000'
+               min='10'
+               step="1"
+               v-model='stdBelow'>
+          </v-slider>
           </v-flex>
           <v-flex xs2 class='mt-3'>
             {{ (stdBelow/100) | formatNumber('%0.2f')}}
           </v-flex>
         </v-layout>
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn flat primary @click.native='openConfig=false'>
-          Close
-        </v-btn>
-      </v-card-actions>j
-    </v-card>
 
-  </v-dialog>
+        <v-layout>
+          <v-flex xs4 class='input-group'>
+            <label>Time Scale</label>
+          </v-flex>
+          <v-flex xs6>
+            <v-slider
+               @input='setConfig'
+               max='25'
+               min='0'
+               step="1"
+               v-model='speedScale'>
+            </v-slider>
+          </v-flex>
+          <v-flex xs2 class='mt-3'>
+            {{speedScale | formatNumber('%0.3f')}}
+          </v-flex>
+        </v-layout>
 
+    </v-flex>
 
+    <v-flex xs8 v-bind:id='chartID'>
+      <canvas v-bind:id='canvasID' height="350"></canvas>
+    </v-flex>
   </v-layout>
 </template>
 
@@ -145,11 +102,11 @@
 
     components: {},
 
-    props: {
-    },
+    props: ['channelNumber'],
 
     data () {
       return {
+        config: {},
         autoScaleTime: 0,
         autoScaleInterval: 500,
         stdAbove: 600,
@@ -167,26 +124,57 @@
         weightedMean: 0,
         weightedVar: 0,
         scaleSensitivity: 200,
-        autoScale: false,
+        autoScale: true,
         autoScaleIterations: 0,
         boardTime: 0,
         leaveTime: 0,
         maxTime: 0,
-        plotFiltered: true,
       }
     },
 
     methods: {
 
+      retrieveConfig () {
+        // HACK! Noat
+        if (this.channelNumber == 0) {
+          this.config = localStorage.getObj('pztConfig')
+        } else {
+          this.config = localStorage.getObj('ppgConfig')
+        }
+        if (this.config) {
+          this.autoScale = this.config.autoScale
+          this.scaleSensitivity = this.config.scaleSensitivity
+          this.stdAbove = this.config.stdAbove
+          this.stdBelow = this.config.stdBelow
+          this.speedScale = this.config.speedScale
+        }
+      },
+
+      setConfig () {
+        if (this.channelNumber == 0) {
+          var configName = 'pztConfig'
+        } else {
+          var configName = 'ppgConfig'
+        }
+        this.config.autoScale = this.autoScale
+        this.config.scaleSensitivity = this.scaleSensitivity
+        this.config.stdAbove = this.stdAbove
+        this.config.stdBelow = this.stdBelow
+        this.config.speedScale = this.speedScale
+        localStorage.setObj(configName, this.config)
+      },
+
       resize () {
         // What a hack! Need slight delay to find correct width of chart.
-        var y = $('#data').width()
-        $('#chart').attr('width', y)
+        var y = $('#' + this.chartID).width()
+        $('#' +  this.canvasID).attr('width', y)
       },
 
       updateBuffer (dataPackage) {
         // Update sampling rate.
-        console.log(dataPackage)
+        if (parseInt(dataPackage[0]) != parseInt(this.channelNumber)){
+          return
+        }
         var currentTime = new Date().getTime()
         var sample = dataPackage[1]
         if (sample) {
@@ -227,9 +215,25 @@
 
     computed: {
 
-        alphaDecay () {
-            return Math.pow(10, -this.scaleSensitivity/100)
+      alphaDecay () {
+        return Math.pow(10, -this.scaleSensitivity/100)
+      },
+
+      chartID () {
+        return ('channel-' + this.channelNumber)
+      },
+
+      canvasID () {
+        return ('canvas-' + this.channelNumber)
+      },
+
+      channelName () {
+        if (this.channelNumber == 0) {
+          return 'PZT'
+        } else {
+          return 'PPG'
         }
+      }
     },
 
     mounted () {
@@ -252,12 +256,12 @@
         fillStyle: '#000000',
         fontSize: 18}
       this.chart = new SmoothieChart(options)
-      this.chart.streamTo(document.getElementById('chart'), 3000)
+      this.chart.streamTo(document.getElementById(this.canvasID), 1000)
 
       // Let's update the size of the graph if windows resize...
       $( window ).resize(function() {
-        var y = $('#data').width()
-        $('#chart').attr('width',y)
+        var y = $('#' + this.chartID).width()
+        $('#' +  this.canvasID).attr('width',y)
       })
       setTimeout(this.resize, 500)
 
@@ -273,6 +277,7 @@
       this.$store.dispatch('establishSocketConnection')
       this.$store.state.socket.on('data_package', this.updateBuffer)
       this.$store.state.socket.on('disconnect', function() {console.log('Disconnected')})
+      this.retrieveConfig()
     }
   }
 
