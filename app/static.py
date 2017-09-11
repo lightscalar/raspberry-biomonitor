@@ -6,7 +6,6 @@ import os
 
 # Serve static index.html file from the /site directory.
 PORT = 5000
-print(__name__)
 
 if __name__ == '__main__':
     web_dir = os.path.join(os.path.dirname(__file__), '../dist')

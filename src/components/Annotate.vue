@@ -36,7 +36,7 @@
 
           <v-card-text>
             <v-layout row wrap>
-              <v-flex xs12 lg6>
+              <v-flex xs12 lg5>
                 <v-text-field
                   @blur='saveSession'
                   label='Description'
@@ -44,7 +44,7 @@
                 </v-text-field>
               </v-flex>
 
-              <v-flex xs12 lg4 offset-lg1>
+              <v-flex xs12 lg5 offset-lg2>
                 <v-select
                   v-bind:items="cohorts"
                   label="Cohort"

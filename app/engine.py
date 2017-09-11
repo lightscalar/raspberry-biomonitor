@@ -3,7 +3,6 @@ from datastore import *
 from filters import *
 import numpy as np
 from queue import Queue
-from sockets import Server
 from threading import Thread
 from time import time
 from watchdog import Watchdog
