@@ -35,7 +35,6 @@ export default new Vuex.Store ({
     setSocket (state) {
       if (state.socket.notConnected) {
         state.socket = io.connect('http://localhost:5200')
-        console.log(state.socket)
       }
     },
 
