@@ -87,18 +87,26 @@ class Oracle(Thread):
                 # self.last_time = time()
             q.task_done()
 
+    def validate_port(self, port):
+        '''Attempt to connect to the port and validate it is the Biomonitor.'''
+        try:
+            with serial.Serial(port, BAUD_RATE) as ser:
+                for _ in range(5):
+                    raw_output = ser.readline()
+                    scan = re.search(BIOMONITOR_REGEX, str(raw_output))
+                    if scan is not None and scan.group(1) == 'B1':
+                        self.port = port
+                        break
+        except:
+            print('Exception attempting to read from port {}'.format(port))
+            return None
+
     def connect_to_board(self):
         '''Attempt to connect to the Biomonitor hardware.'''
         while self.port is None:
             valid_ports = find_serial_devices()
             for port in valid_ports:
-                with serial.Serial(port, BAUD_RATE) as ser:
-                    for _ in range(5):
-                        raw_output = ser.readline()
-                        scan = re.search(BIOMONITOR_REGEX, str(raw_output))
-                        if scan is not None and scan.group(1) == 'B1':
-                            self.port = port
-                            break
+                self.validate_port(port)
             # Cannot find a good port?
             if self.port is None:
                 print('Cannot find board.')
