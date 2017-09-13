@@ -41,7 +41,6 @@ prompt-toolkit==1.0.15
 ptyprocess==0.5.2
 pyglet==1.2.4
 Pygments==2.2.0
-PyInstaller==3.3.dev0+ga43a5d23
 pymongo==3.5.1
 pyserial==3.4
 python-dateutil==2.6.1
