@@ -100,7 +100,7 @@
         // Ensure we are updating at the appropriate rate.
         var now = new Date().getTime()
         var dt = (now - this.lastUpdateTime)
-        var numberToInsert = Math.min(Math.round(dt/50), 5)
+        var numberToInsert = Math.min(Math.round(dt/50), 15)
         for (var k=0; k<numberToInsert; k++) {
           var sample = this.sampleBuffer.shift()
           if (sample) {

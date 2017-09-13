@@ -53,7 +53,6 @@ def prepare_data(session_id):
 def start_record(session_id):
     print('Starting data collection to {:s}'.format(session_id))
     engine.start_recording(session_id)
-    print('Stopping data collection.')
     message = 'Recording Data'
     status = {'isRecording': engine.is_recording, 'message': message,\
             'connected': True}

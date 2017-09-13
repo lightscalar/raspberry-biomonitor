@@ -95,6 +95,10 @@ export default {
 
     updateControls (status) {
       this.isRecording = status.isRecording
+    },
+
+    getStatus () {
+      this.$store.state.socket.emit('requestStatus')
     }
 
   },
@@ -110,7 +114,7 @@ export default {
   mounted () {
     this.$store.dispatch('getSession', this.id)
     this.$store.state.socket.on('status', this.updateControls)
-    this.$store.state.socket.emit('requestStatus')
+    setTimeout(this.getStatus, 800)
   }
 }
 
