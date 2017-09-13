@@ -1,18 +1,17 @@
 import eventlet
-from eventlet import wsgi
 eventlet.monkey_patch()
-from flask import Flask, send_from_directory
-from flask_cors import CORS
+import http.server
+import socketserver
 import os
 
+# Serve static index.html file from the /site directory.
 PORT = 5000
-app = Flask(__name__, static_folder='../dist/static', static_url_path='/static')
-CORS(app)
-
-@app.route('/')
-def index():
-    return send_from_directory('../dist', 'index.html')
 
 if __name__ == '__main__':
-    # Run the webserver.
-    app.run()
+    web_dir = os.path.join(os.path.dirname(__file__), '../dist')
+    os.chdir(web_dir)
+
+    Handler = http.server.SimpleHTTPRequestHandler
+    httpd = socketserver.TCPServer(("", PORT), Handler)
+    print("serving at port", PORT)
+    httpd.serve_forever()
