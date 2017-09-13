@@ -22,9 +22,9 @@ def find_serial_devices():
         ports = ['COM{}'.format( (i + 1)) for i in range(256)]
     elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
         # this excludes your current terminal "/dev/tty"
-        ports = glob.glob('/dev/tty[A-Za-z]*')
+        ports = glob('/dev/tty[A-Za-z]*')
     elif sys.platform.startswith('darwin'):
-        ports = glob.glob('/dev/tty.*')
+        ports = glob('/dev/tty.usbmodem*')
     else:
         raise EnvironmentError('Unsupported platform')
     return ports
