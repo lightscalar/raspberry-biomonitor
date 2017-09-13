@@ -1,5 +1,18 @@
 import numpy as np
 from scipy.signal import butter, lfilter
+from scipy.interpolate import interp1d
+
+
+def smart_sample(t, x, target_sampling_rate):
+    '''Use cubic spline to downsample.'''
+    t, x = np.array(t), np.array(x)
+    y = interp1d(t, x, kind='cubic')
+    fs = 1/np.median(np.diff(t))
+    dt = int(np.ceil(fs/target_sampling_rate))
+    idx = range(0, len(x), dt)
+    t_ = t[idx]
+    x_ = y(t_)
+    return t_.tolist(), x_.tolist()
 
 
 def lowpass(t, y, filter_order=5, freq_cutoff=10, zi=[]):

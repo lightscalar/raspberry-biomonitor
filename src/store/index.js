@@ -15,7 +15,7 @@ export default new Vuex.Store ({
       streaming: false,
       message: 'Board Not Detected'
     },
-    socket: {},
+    socket: {notConnected: true},
 
     histories: [],
     history: {},
@@ -33,7 +33,10 @@ export default new Vuex.Store ({
   mutations: {
 
     setSocket (state) {
-      state.socket = io.connect('http://localhost:5200')
+      if (state.socket.notConnected) {
+        state.socket = io.connect('http://localhost:5200')
+        console.log(state.socket)
+      }
     },
 
     setStatus (state, monitorStatus) {
@@ -82,7 +85,8 @@ export default new Vuex.Store ({
     },
 
     createSession (context) {
-      var session = context.state.session
+      var session = {hid: null, cohortId: null, events: [], histories: [],
+        reports: []}
       api.postResource ('sessions', session).then(function (resp) {
         context.commit('setSession', resp.data)
         router.push({name: 'Session', params: {id: resp.data._id}})

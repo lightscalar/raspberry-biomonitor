@@ -40,12 +40,11 @@
     </v-card>
     <br/>
 
-
     <div v-for='channel in availableChannels' :key='channel'>
     <v-card>
       <v-card-text >
-        <chart :channelNumber='channel'>
-        </chart>
+        <smart-chart :channelNumber='channel'>
+        </smart-chart>
       </v-card-text>
     </v-card>
     </br>
@@ -57,10 +56,12 @@
 <script>
 
 import Chart from "./Chart.vue"
+import ChartX from "./ChartX.vue"
+import SmartChart from "./SmartChart.vue"
 
 export default {
 
-  components: {Chart},
+  components: {Chart, ChartX, SmartChart},
 
   props: ['id'],
 
@@ -90,6 +91,10 @@ export default {
         this.$store.state.socket.emit('start_record', this.session._id)
       }
       this.isRecording = !this.isRecording
+    },
+
+    updateControls (status) {
+      this.isRecording = status.isRecording
     }
 
   },
@@ -98,13 +103,14 @@ export default {
 
     session () {
       return this.$store.state.session
-    }
+    },
 
   },
 
   mounted () {
-    console.log('Mounted!')
     this.$store.dispatch('getSession', this.id)
+    this.$store.state.socket.on('status', this.updateControls)
+    this.$store.state.socket.emit('requestStatus')
   }
 }
 

@@ -32,7 +32,7 @@ class Engine(object):
         self.allowed_channels = [0,1]
         self.freq_cutoff = 10
         self.filter_order = 6
-        self.downsample_rate = 100
+        self.downsample_rate = 25
         self.zi = {}
         self.channel_data = {}
         self.buffers_to_watch = []
@@ -77,9 +77,9 @@ class Engine(object):
 
             # Downsample and broadcast the data.
             if self.is_broadcasting:
-                t_down, s_down = downsample(d.t, d.filtered,\
+                t_down, s_down = smart_sample(d.t, d.filtered,\
                         self.downsample_rate)
-                package = [ichn, self.downsample_rate, s_down]
+                package = [ichn, self.downsample_rate, s_down, t_down]
                 self.events.on_data(package)
 
             # Save the data to h5df store.

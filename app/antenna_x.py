@@ -30,15 +30,13 @@ class Antenna(object):
         '''Push data through the socket.'''
         while True:
             data = q.get()
-            print(self.q.qsize())
             chn = data[0]
-            sample_rate = data[1]
-            for itr, val in enumerate(data[2]):
-                if chn == 0:
-                    self.socket.emit('pzt', val)
-                else:
-                    self.socket.emit('ppg', val)
-                sleep(1/sample_rate)
+            package = list(zip(data[3], data[2]))
+            package = [{'x': t, 'y': v} for (t,v) in zip(data[3], data[2])]
+            if chn == 0:
+                self.socket.emit('pzt', package)
+            else:
+                self.socket.emit('ppg', package)
             q.task_done()
 
     def stop(self):

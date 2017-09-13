@@ -1,4 +1,4 @@
-from antenna import Antenna
+from antenna_x import Antenna
 from engine import Engine
 from flask import Flask
 from flask_socketio import SocketIO, send, emit
@@ -53,7 +53,11 @@ def prepare_data(session_id):
 def start_record(session_id):
     print('Starting data collection to {:s}'.format(session_id))
     engine.start_recording(session_id)
-    emit('status', {'connected': True, 'message': 'Recording Data'})
+    print('Stopping data collection.')
+    message = 'Recording Data'
+    status = {'isRecording': engine.is_recording, 'message': message,\
+            'connected': True}
+    emit('status', status)
 
 
 @socketio.on('stop_record')
@@ -61,7 +65,21 @@ def stop_record():
     '''Start recording data.'''
     print('Stopping data collection.')
     engine.stop_recording()
-    emit('status', {'connected': True, 'message': 'Data Available'})
+    message = 'Data Available'
+    status = {'isRecording': engine.is_recording, 'message': message,\
+            'connected': True}
+    emit('status', status)
+
+@socketio.on('requestStatus')
+def send_status():
+    if engine.is_recording:
+        message = 'Recording Data'
+    else:
+        message = 'Data Available'
+    status = {'isRecording': engine.is_recording, 'message': message,\
+            'connected': True}
+    print(status)
+    emit('status', status)
 
 
 # ------------------------------------------------

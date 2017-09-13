@@ -150,8 +150,6 @@
           this.speedScale = this.config.speedScale
           this.topScale = this.config.topScale
           this.botScale = this.config.botScale
-          this.weightedMean = this.config.weightedMean
-          this.weightedVar = this.config.weightedVar
         }
       },
 
@@ -161,7 +159,6 @@
         } else {
           var configName = 'ppgConfig'
         }
-        this.config = {}
         this.config.autoScale = this.autoScale
         this.config.scaleSensitivity = this.scaleSensitivity
         this.config.stdAbove = this.stdAbove
@@ -169,8 +166,6 @@
         this.config.speedScale = this.speedScale
         this.config.topScale = this.topScale
         this.config.botScale = this.botScale
-        this.config.weightedMean = this.weightedMean
-        this.config.weightedVar = this.weightedVar
         localStorage.setObj(configName, this.config)
       },
 
@@ -180,14 +175,23 @@
         $('#' +  this.canvasID).attr('width', y)
       },
 
-      updateBuffer (sample) {
-        // Update sampling rate.j
-        var currentTime =  new Date().getTime()
-        if ((currentTime - this.lastTime) < 9) {
-          return
+      dataReceived (samples) {
+        this.sampleBuffer = this.sampleBuffer.concat(samples)
+        console.log(this.sampleBuffer.length)
+      },
+
+      updateBuffer () {
+        // Update sampling rate.
+        var now =  new Date().getTime()
+        var deltaTime = (now - this.lastTime)
+        console.log(deltaTime/10)
+        var ratio = parseInt(Math.round(deltaTime/10))
+        ratio = Math.max(ratio,5)
+        var sample = this.sampleBuffer.shift()
+        if (ratio == 2) {
+          var sample = this.sampleBuffer.shift()
         }
-        console.log(currentTime - this.lastTime)
-        this.lastTime = currentTime
+
         if (sample) {
           this.timeSeries.append(new Date().getTime(), sample)
           if (this.autoScale) {
@@ -198,7 +202,7 @@
             var std = Math.sqrt(this.weightedVar)
             var minVal = this.weightedMean - (this.stdBelow/100)*std
             var maxVal = this.weightedMean + (this.stdAbove/100)*std
-            if ( (currentTime - this.autoScaleTime) > this.autoScaleInterval) {
+            if ( (now - this.autoScaleTime) > this.autoScaleInterval) {
               this.topScale = maxVal
               this.botScale = minVal
               this.autoScaleTime = new Date().getTime()
@@ -206,6 +210,8 @@
             }
           }
         }
+        this.lastTime = new Date().getTime()
+        setTimeout(this.updateBuffer, 10)
       },
     },
 
@@ -260,7 +266,7 @@
       this.botScale = 0
       options.millisPerPixel = this.speedScale
       options.grid = {
-        linewidth: 3,
+        linewidth: 1,
         verticalSections: 4,
         fillStyle: '#fefefe',
       }
@@ -268,7 +274,7 @@
         fillStyle: '#000000',
         fontSize: 18}
       this.chart = new SmoothieChart(options)
-      this.chart.streamTo(document.getElementById(this.canvasID), 2000)
+      this.chart.streamTo(document.getElementById(this.canvasID), 1000)
 
       // Let's update the size of the graph if windows resize...
       $( window ).resize(function() {
@@ -290,10 +296,14 @@
       this.$store.state.socket.on('disconnect', function() {console.log('Disconnected')})
       this.retrieveConfig()
       if (this.channelName == 'PPG') {
-        this.$store.state.socket.on('ppg', this.updateBuffer)
+        this.$store.state.socket.on('ppg', this.dataReceived)
       } else {
-        this.$store.state.socket.on('pzt', this.updateBuffer)
+        this.$store.state.socket.on('pzt', this.dataReceived)
       }
+      this.updateBuffer()
+      window.addEventListener('visibilityChange', function () {
+        console.log('CHANGING VISIBILITY')
+      })
     }
   }
 
