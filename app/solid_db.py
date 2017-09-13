@@ -2,7 +2,6 @@ from bson import ObjectId
 import inflect
 import time
 from tinydb import TinyDB, Query
-import ujson
 
 
 def current_time():
