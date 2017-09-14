@@ -83,6 +83,7 @@
     methods: {
 
       dataReceived (samples) {
+        this.chart.render()
         this.sampleBuffer = this.sampleBuffer.concat(samples)
         if (this.chartData.length == 0) {
           this.fillChart()
@@ -96,11 +97,13 @@
       },
 
       updateChart () {
-
         // Ensure we are updating at the appropriate rate.
+        var updateInterval = 40
+        var targetNumber = 25 * (updateInterval/1000)
         var now = new Date().getTime()
         var dt = (now - this.lastUpdateTime)
-        var numberToInsert = Math.min(Math.round(dt/50), 15)
+        // var numberToInsert = Math.min(Math.round(targeNumber, 1000)
+        var numberToInsert = targetNumber
         for (var k=0; k<numberToInsert; k++) {
           var sample = this.sampleBuffer.shift()
           if (sample) {
@@ -112,7 +115,7 @@
         }
         this.chart.render()
         this.lastUpdateTime = now
-        setTimeout(this.updateChart, 50)
+        setTimeout(this.updateChart, 2*updateInterval-dt)
       },
 
       fillChart () {
@@ -136,7 +139,7 @@
             titleFontFamily: 'Avenir Next',
             titleFontSize: 14,
             labelFontSize: 14,
-            interval: this.tickInterval,
+            interval: 0.5,
             intervalType: 'seconds'
           },
           axisY: {
@@ -153,7 +156,7 @@
             {
               type: "spline",
               lineColor: '#C62828',
-              lineWidth: 2,
+              lineThickness: 4,
               color: '#C62828',
               dataPointWidth: 1,
               dataPoints: this.chartData

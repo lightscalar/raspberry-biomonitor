@@ -51,7 +51,7 @@ class Oracle(Thread):
             self.buffer[chn] = Vessel('buffer-{:02d}.dat'.format(chn))
             self.buffer[chn].channel_number = chn
             self.clear_buffer(chn)
-        self.chunk_size = 1000
+        self.chunk_size = 500
 
         # Define the workers.
         self.q = Queue()
