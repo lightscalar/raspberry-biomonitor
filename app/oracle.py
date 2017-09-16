@@ -111,7 +111,7 @@ class Oracle(Thread):
             if self.port is None:
                 print('Cannot find board.')
                 print('Trying again.')
-                sleep(0.2)
+                sleep(1.0)
             else:
                 print('Connected to board.')
 
@@ -145,11 +145,20 @@ class Oracle(Thread):
             # self.data[chn].append([chn, timestamp, value])
             self.q.put([chn, timestamp, value, time()])
 
+    def collect_data(self):
+        try:
+            with serial.Serial(self.port, BAUD_RATE) as ser:
+                while True:
+                    self.read_data(ser)
+        except:
+            self.port = None
+            print('Problem reading from port {}.'.format(self.port))
+
     def run(self):
         '''Collect data and send it to a socket connection.'''
-        with serial.Serial(self.port, BAUD_RATE) as ser:
-            while self.go:
-                self.read_data(ser)
+        while self.go:
+            self.collect_data()
+            self.connect_to_board()
 
     def stop(self):
         self.go = False

@@ -10,16 +10,16 @@
         </v-card-text>
         <v-card-text v-else>
           <v-layout>
-            <v-flex xs2>
+            <v-flex xs1>
               <v-progress-circular
                 indeterminate
                 v-bind:size="50"
-                class="primary--text">
+                class="red--text text--darken-3">
               </v-progress-circular>
             </v-flex>
             <v-flex xs6>
               <h5 class='mt-2'>
-                Buffering Data. One Moment.
+                Buffering Data | One Moment
               </h5>
             </v-flex>
           </v-layout>
