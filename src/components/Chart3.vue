@@ -144,7 +144,13 @@
         chartWidth: 10,
         timeFrame: 10000,
         sensitivities: [
-          {value: 0.01}, {value: 0.1}, {value: 0.5}, {value: 1}, {value:10}],
+          {value: 0.001},
+          {value: 0.01},
+          {value: 0.1},
+          {value: 0.5},
+          {value: 1},
+          {value:10}
+        ],
       }
     },
 
@@ -154,7 +160,7 @@
         // Increase chart maximum.
         this.chartMax = parseFloat(this.chartMax)
         this.chartMax += this.maxSensitivity
-        this.chartMax = Math.round(this.chartMax*100)/100
+        this.chartMax = Math.round(this.chartMax*1000)/1000
         this.scaleVerticalAxis()
       },
 
@@ -162,7 +168,7 @@
         // Increase chart maximum.
         this.chartMax = parseFloat(this.chartMax)
         this.chartMax -= this.maxSensitivity
-        this.chartMax = Math.round(this.chartMax*100)/100
+        this.chartMax = Math.round(this.chartMax*1000)/1000
         this.scaleVerticalAxis()
       },
 
@@ -170,7 +176,7 @@
         // Increase chart minimum.
         this.chartMin = parseFloat(this.chartMin)
         this.chartMin += this.maxSensitivity
-        this.chartMin = Math.round(this.chartMin*100)/100
+        this.chartMin = Math.round(this.chartMin*1000)/1000
         this.scaleVerticalAxis()
       },
 
@@ -178,7 +184,7 @@
         // Decrease chart minimum.
         this.chartMin = parseFloat(this.chartMin)
         this.chartMin -= this.maxSensitivity
-        this.chartMin = Math.round(this.chartMin*100)/100
+        this.chartMin = Math.round(this.chartMin*1000)/1000
         this.scaleVerticalAxis()
       },
 
@@ -186,7 +192,7 @@
         // Increase chart width.
         this.chartWidth = parseFloat(this.chartWidth)
         this.chartWidth += this.widthSensitivity
-        this.chartWidth = Math.round(this.chartWidth*100)/100
+        this.chartWidth = Math.round(this.chartWidth*1000)/1000
         this.scaleHorizontalAxis()
       },
 
@@ -194,7 +200,7 @@
         // Decrease chart width.
         this.chartWidth = parseFloat(this.chartWidth)
         this.chartWidth -= this.widthSensitivity
-        this.chartWidth = Math.round(this.chartWidth*100)/100
+        this.chartWidth = Math.round(this.chartWidth*1000)/1000
         this.scaleHorizontalAxis()
       },
 
@@ -295,7 +301,7 @@
           }
         }
 
-        var interval = d3.interval(this.update, 40);
+        var interval = d3.interval(this.update, 31.25);
 
         function update(){
           time = Date.now();
@@ -396,6 +402,9 @@
 
       dataReceived (samples) {
         this.dataBuffer = this.dataBuffer.concat(samples)
+        if (this.dataBuffer.length>80) {
+            location.reload()
+        }
         var self = this
         if (!this.dataAvailable) {
             setTimeout(function () {

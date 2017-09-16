@@ -7,6 +7,7 @@ from threading import Thread
 from time import time
 from watchdog import Watchdog
 from utils import Vessel
+from ipdb import set_trace as debug
 
 
 class Engine(object):
@@ -32,7 +33,7 @@ class Engine(object):
         self.allowed_channels = [0,1]
         self.freq_cutoff = 10
         self.filter_order = 6
-        self.downsample_rate = 25
+        self.downsample_rate = 32
         self.zi = {}
         self.channel_data = {}
         self.buffers_to_watch = []
@@ -40,6 +41,7 @@ class Engine(object):
             self.zi[chn] = np.zeros(self.filter_order)
             self.channel_data[chn] = []
             self.buffers_to_watch.append('buffer-{:02d}.dat'.format(chn))
+        self.buffers_to_watch.append('oracle_status.dat')
 
         # Listen for buffer changes:
         self.watchdog = Watchdog(self.buffers_to_watch)
@@ -68,28 +70,45 @@ class Engine(object):
                 d = Vessel(buffer_name)
             except:
                 print('Problem reading data.')
-            ichn = int(d.channel_number)
 
-            # Filter the data.
-            d.filtered, self.zi[ichn] = lowpass(d.t, d.v,\
-                    freq_cutoff=self.freq_cutoff,\
-                    filter_order=self.filter_order, zi=self.zi[ichn])
+            # Oracle status has changed; alert everyone!
+            if buffer_name == 'oracle_status.dat':
+                connected = d.connected
+                if connected:
+                    message = 'Data Available'
+                else:
+                    message = 'Board Not Connected'
+                    self.is_recording = False
+                status = {}
+                status['message'] = message
+                status['connected'] = connected
+                self.events.on_status(status)
+                q.task_done()
 
-            # Downsample and broadcast the data.
-            if self.is_broadcasting:
-                t_down, s_down = downsample(d.t, d.filtered,\
-                        self.downsample_rate)
-                package = [ichn, self.downsample_rate, s_down, t_down]
-                self.events.on_data(package)
+            else:
+                # Otherwise, new data package is available. Process!
+                ichn = int(d.channel_number)
 
-            # Save the data to h5df store.
-            if self.is_recording:
-                for key in self.valid_keys:
-                    val = np.array(d.__dict__[key])
-                    self.datastore.write(self.session_id, ichn, key, val)
+                # Filter the data.
+                d.filtered, self.zi[ichn] = lowpass(d.t, d.v,\
+                        freq_cutoff=self.freq_cutoff,\
+                        filter_order=self.filter_order, zi=self.zi[ichn])
 
-            # End data processing.
-            q.task_done()
+                # Downsample and broadcast the data.
+                if self.is_broadcasting:
+                    t_down, s_down = downsample(d.t, d.filtered,\
+                            self.downsample_rate)
+                    package = [ichn, self.downsample_rate, s_down, t_down]
+                    self.events.on_data(package)
+
+                # Save the data to h5df store.
+                if self.is_recording:
+                    for key in self.valid_keys:
+                        val = np.array(d.__dict__[key])
+                        self.datastore.write(self.session_id, ichn, key, val)
+
+                # End data processing.
+                q.task_done()
 
     def start_recording(self, session_id):
         '''Start saving data to datastore.'''

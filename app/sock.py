@@ -86,6 +86,16 @@ def send_status():
 # ------------------------------------------------
 def status_update(status):
     '''Send out a status update.'''
+    if engine.is_recording:
+        message = 'Recording Data'
+    else:
+        message = 'Data Available'
+    status = {'isRecording': engine.is_recording, 'message': message,\
+            'connected': True}
+    socketio.emit('status', status)
+
+def engine_status_update(status):
+    '''Engine is signalling status update.'''
     socketio.emit('status', status)
 
 
@@ -96,6 +106,7 @@ if __name__ == '__main__':
 
     # Define communication objects.
     engine.events.on_data += antenna.push
+    engine.events.on_status += engine_status_update
 
     # Launch server. Will use eventlet, if available.
     socketio.run(app, port=PORT, debug=False)

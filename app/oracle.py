@@ -39,6 +39,9 @@ class Oracle(Thread):
         self.port = None
         self.go = True
         self.last_time = time()
+        self.status = Vessel('oracle_status.dat')
+        self.status.connected = False
+        self.status.save()
 
         self.allowed_channels = [0, 1]
 
@@ -114,6 +117,8 @@ class Oracle(Thread):
                 sleep(1.0)
             else:
                 print('Connected to board.')
+                self.status.connected = True
+                self.status.save()
 
     def parse_biomonitor(self, line):
         '''Parse output from the Biomonitor.'''
@@ -153,6 +158,8 @@ class Oracle(Thread):
         except:
             self.port = None
             print('Problem reading from port {}.'.format(self.port))
+            self.status.connected = False
+            self.status.save()
 
     def run(self):
         '''Collect data and send it to a socket connection.'''
