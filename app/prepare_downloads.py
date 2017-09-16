@@ -118,6 +118,7 @@ def create_csv(session_id):
 
     compressed_filename = '../static/downloads/{}_{}.zip'\
             .format(tstamp, human_id)
+
     with ZipFile(compressed_filename, 'w') as f:
         for filename in files_to_compress:
             f.write(filename)
