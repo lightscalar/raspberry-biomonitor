@@ -5,8 +5,25 @@
         <v-card-title>
           <h4 class='blue--text text--darken-3'>{{channelName}}</h4>
         </v-card-title>
-        <v-card-text style='margin-top:-80px'>
+        <v-card-text style='margin-top:-80px' v-if='dataAvailable'>
           <div v-bind:id='chartID'></div>
+        </v-card-text>
+        <v-card-text v-else>
+          <v-layout>
+            <v-flex xs2>
+              <v-progress-circular
+                indeterminate
+                v-bind:size="50"
+                class="primary--text">
+              </v-progress-circular>
+            </v-flex>
+            <v-flex xs6>
+              <h5 class='mt-2'>
+                Buffering Data. One Moment.
+              </h5>
+            </v-flex>
+          </v-layout>
+
         </v-card-text>
       </v-card>
     </v-flex>
