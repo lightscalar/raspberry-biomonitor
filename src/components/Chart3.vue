@@ -5,11 +5,11 @@
         <v-card-title>
           <h4 class='blue--text text--darken-3'>{{channelName}}</h4>
         </v-card-title>
-        <v-card-text style='margin-top:-80px' v-if='dataAvailable'>
+        <v-card-text style='margin-top:-80px'>
           <div v-bind:id='chartID'></div>
         </v-card-text>
-        <v-card-text v-else>
-          <v-layout>
+        <v-card-text>
+          <v-layout v-if='!dataAvailable'>
             <v-flex xs1>
               <v-progress-circular
                 indeterminate
@@ -17,9 +17,9 @@
                 class="red--text text--darken-3">
               </v-progress-circular>
             </v-flex>
-            <v-flex xs6>
+            <v-flex xs11>
               <h5 class='mt-2'>
-                Buffering Data | One Moment
+                Buffering data. One moment, please.
               </h5>
             </v-flex>
           </v-layout>
@@ -136,6 +136,7 @@
       return {
 
         dataBuffer: [],
+        dataAvailable: false,
         maxSensitivity: 0.1,
         widthSensitivity: 1,
         chartMax: 10,
@@ -395,6 +396,13 @@
 
       dataReceived (samples) {
         this.dataBuffer = this.dataBuffer.concat(samples)
+        var self = this
+        if (!this.dataAvailable) {
+            setTimeout(function () {
+              self.dataAvailable = true
+              self.buildChart()
+            }, 1000)
+        }
       }
 
     },
@@ -418,7 +426,6 @@
     mounted () {
 
       console.log('Mounted')
-      setTimeout(this.buildChart, 500)
       setTimeout(this.registerListeners, 1000)
 
     }
