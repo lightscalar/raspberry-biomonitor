@@ -7,7 +7,6 @@ from threading import Thread
 from time import time
 from watchdog import Watchdog
 from utils import Vessel
-from ipdb import set_trace as debug
 
 
 class Engine(object):
