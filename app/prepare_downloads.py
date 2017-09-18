@@ -9,7 +9,7 @@ from zipfile import ZipFile
 
 
 AVAILABLE_CHANNELS = ['PZT', 'PPG']
-DOWNLOAD_LOCATION = '../static/downloads'
+DOWNLOAD_LOCATION = '../dist/static/downloads'
 TMP_LOCATION = '.'
 
 
