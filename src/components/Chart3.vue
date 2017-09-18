@@ -402,8 +402,9 @@
 
       dataReceived (samples) {
         this.dataBuffer = this.dataBuffer.concat(samples)
-        if (this.dataBuffer.length>180) {
-            //location.reload()
+        console.log(samples.length)
+        if (this.dataBuffer.length>80) {
+            // location.reload()
         }
         var self = this
         if (!this.dataAvailable) {
