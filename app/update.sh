@@ -1,0 +1,2 @@
+cd ~/biomonitor/
+git pull
