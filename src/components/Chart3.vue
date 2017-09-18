@@ -402,7 +402,7 @@
 
       dataReceived (samples) {
         this.dataBuffer = this.dataBuffer.concat(samples)
-        if (this.dataBuffer.length>80) {
+        if (this.dataBuffer.length>180) {
             location.reload()
         }
         var self = this
