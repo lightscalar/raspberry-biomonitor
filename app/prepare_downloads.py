@@ -124,7 +124,10 @@ def create_csv(session_id):
             f.write(filename)
             os.remove(filename)
 
-    return compressed_filename
+    file_url = '../static/downloads/{}_{}.zip'\
+            .format(tstamp, human_id)
+
+    return file_url
 
 
 
