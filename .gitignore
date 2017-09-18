@@ -26,7 +26,7 @@ __pycache__/
 *.hdf5
 data/
 develop-eggs/
-.zip
+*.zip
 eggs/
 .eggs/
 lib/
